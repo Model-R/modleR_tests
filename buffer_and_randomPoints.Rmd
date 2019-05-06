@@ -1,0 +1,662 @@
+---
+title: "Testing background point generation in Model-R"
+author: "Andrea Sánchez-Tapia"
+date: "`r Sys.Date()`"
+output:
+  html_document: 
+    number_sections: true
+  pdf_document: default
+    
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
+```
+
+This workflow tests background point generation in `Model-R`. We perform tests with different types of buffer and different code options to sample pseudoabsences inside a geographic buffer. Later, we explore how different methods for sampling pseudoabsences results on different model predictions. 
+
+To run this example you will need `ModelR`and the additional packages `rJava`, `raster`, and `dplyr`. To check if they are already installed and install eventually missing packages run the code bellow.
+
+```{r,  message=FALSE, eval=FALSE}
+packages <- c("rJava", "raster", "dplyr", "devtools")
+instpack <- packages[!packages %in% installed.packages()]
+if(length(instpack)>0)
+{
+    install.packages(packages[!packages %in% installed.packages()])
+}
+```
+
+If you don't have `ModelR` installed, run:
+
+```{r,  eval=F}
+devtools::install_github("Model-R/modelr_pkg", ref="master")
+```
+
+
+
+Then, load all required packages. 
+
+```{r load}
+library(rJava)
+library(raster)
+#library(ModelR)
+library(dplyr)
+#eu estou usando uma cópia local para desenvolvimento
+#devtools::load_all("../../ModelR")
+devtools::load_all("/home/sara/Dropbox/JBRJ/ModelR/modelr_pkg_local")
+#mas o pacote pode ser instalado assim: 
+#devtools::install_github("model-r/modelr_pkg", build_vignettes = TRUE, ref = "andrea")
+
+```
+
+# The example data set 
+
+We use a standard dataset inside the package `ModelR`. First, from `coordenadas` object we select only data from one species *Eugenia florida* and create one training set (70% of the data) and one test set (30% of the data) for the data. 
+
+```{r dataset}
+## Creating an object with species names
+especies <- unique(coordenadas$sp)
+# Selecting only coordinates for the first species Eugenia florida
+coord1sp <- dplyr::filter(coordenadas, sp == especies[1])
+head(coord1sp)
+dim(coord1sp)
+# Subsetting data into training and test
+ceiling(0.7 * nrow(coord1sp))
+# Making a sample of 70% of species' records
+set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
+# Crating training data set (70% of species' records)
+train_set <- coord1sp[set,]
+# Creating test data set (other 30%)
+test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
+```
+
+Now lets the check our data points. We plot the traning and test data sets with the first axis of the environmental PCA data from the object `example_vars`.  
+
+```{r plotdataset}
+# selecting only the first PCA axis
+predictor <- example_vars[[1]]
+# transforming the data frame with the coordinates in a spatial object
+pts <- SpatialPoints(coord1sp[,c(2,3)])
+# ploting environmental layer
+plot(predictor, legend = F)
+# adding training data set in red
+points(train_set[,2:3], col = "red", pch = 19)
+# adding test data set in blue
+points(test_set[,2:3], col = "blue", pch = 19)
+```
+
+# Pseudoabsence selection without any buffer
+
+We now use `randomPoints` from `dismo` package and `create_buffer` from `ModelR` to extract background values without using a buffer.  
+
+First, directly from `randomPoints`.
+
+```{r nobuffer dismo, echo = F, eval = T}
+# creating 500 background values with randomPoints
+rand <- dismo::randomPoints(predictor,
+                    n = 500,
+                    excludep = T,
+                    p = coord1sp)
+# ploting environmental layer with background values
+plot(predictor, legend = F, main = "nobuffer randomPoints")
+points(rand, col = "red")
+```
+
+And creating an object with `create_buffer` to be used in `randomPoints` function. We will use this code structure when generating background values with different types of buffer.
+
+```{r nobuffer modelR, echo = F, eval = T}
+# creating an object with coordinates values
+buf <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                     predictors = predictor)
+# using buf o object to generate 500 background values with randomPoints
+buf.p <- dismo::randomPoints(buf,
+                    n = 500,
+                    excludep = T,
+                    p = coord1sp)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor, legend = F, main = "nobuffer createbuffer")
+## create_buffer object
+plot(buf, add = T, legend = F, col = scales::alpha("grey", 0.5), border = "black")
+## background values
+points(buf.p, col = "blue")
+```
+
+# Pseudoabsence selection with a buffer
+
+Here, for all types of buffer, first we create an object with `create_buffer` using different types of buffer and then generate the background values with `randomPoints` from `dismo` package. In `create_buffer` function we implemented four types of buffer:
+
+- `max`: maximum distance between occurrence points
+- `mean`: mean distance between occurrence points
+- `median`: median of distance between occurrence points
+- `distance`: specify a particular distance from each point to sample pseudoabsences
+
+## Buffer with maximum distance `max`
+
+In this example, we use `buffer_type="max"` to generate our first object.
+
+```{r buffermax, echo = F, eval = T}
+#par(mfrow = c(1,1))
+# creating an object with create_buffer with maximum distance buffer type
+buf.max <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                     predictors = predictor,
+                     buffer_type = "max")
+# creating 500 background values from buf.max
+buf.max.p <- dismo::randomPoints(buf.max,
+                    n = 500,
+                    excludep = T,
+                    p = coord1sp)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor,
+     legend = F, main = "buffer max")
+## adding buf.max
+plot(buf.max, add = T, legend = F, 
+     col = scales::alpha("grey", 0.5), border = "black")
+## adding buf.max.p
+points(buf.max.p, col = "blue")
+```
+
+## Buffer with `mean` distance 
+
+In this example, we use `buffer_type="mean"` to generate our first object.
+
+```{r buffermean, echo = F, eval = T}
+#par(mfrow = c(1,1))
+# creating an object with buffer_type="mean"
+buf.mean <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                     predictors = predictor,
+                     buffer_type = "mean")
+# using buf.mean to generate 500 background values
+buf.mean.p <- dismo::randomPoints(buf.mean,
+                    n = 500,
+                    excludep = T,
+                    p = coord1sp)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor,
+     legend = F, main = "buffer mean")
+## adding buf.mean
+plot(buf.mean, add = T, legend = F, 
+     col = scales::alpha("grey", 0.5), border = "black")
+## adding buf.mean.p
+points(buf.mean.p, col = "blue")
+```
+
+## Buffer with `median` of distance
+
+In this example, we use `buffer_type="median"` to generate our first object.
+
+```{r buffermedian, echo = F, eval = T}
+#par(mfrow = c(1,1))
+# creating an object with buffer_type=median
+buf.med <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                     predictors = predictor,
+                     buffer_type = "median")
+# using buf.med to generate 500 background values
+buf.med.p <- dismo::randomPoints(buf.med,
+                    n = 500,
+                    excludep = T,
+                    p = coord1sp)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor,
+     legend = F, main = "buffer median")
+## adding buf.med
+plot(buf.med, add = T, legend = F, 
+     col = scales::alpha("grey", 0.5), border = "black")
+## adding buf.med.p
+points(buf.med.p, col = "blue")
+```
+
+## Buffer with a specific `distance`
+
+In this example we specify a particular distance from each point to sample pseudoabsences inside the buffer. We use `buffer_type = "distance"` and `dist_buf = 5`. Be aware that `dist_buf` must be set when using a distance buffer. 
+
+```{r bufferdistance, echo = F, eval = T}
+# creating buffer with 5 km distance
+buf.dist <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                     predictors = predictor,
+                     buffer_type = "distance",
+                     dist_buf = 5)
+# using buf.dist to generate 500 pseudoabsences
+buf.dist.p <- dismo::randomPoints(buf.dist,
+                    n = 500,
+                    excludep = T,
+                    p = coord1sp)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor,
+     legend = F, main = "buffer distance")
+## adding buff.dist
+plot(buf.dist, add = T, legend = F, 
+     col = scales::alpha("grey", 0.5), border = "black")
+## adding buf.dist.p
+points(buf.dist.p, col = "blue")
+```
+
+# Within `setup_sdmdata`
+
+Another option for implementing no buffer or any type of buffer is using function `setup_sdmdata` from `ModelR`. In this case there's no need to call for `randomPoints` from `dismo` package since it is implemented inside `setup_sdmdata`. 
+
+## `setup_sdmdata` without buffer
+
+Here we specify `buffer_type = NULL` to perform background point generation. 
+
+```{r sdmdatanull, eval = T}
+# background point generation inside setup_sdmdata
+a <- setup_sdmdata(species_name = especies[1],
+              occurrences = coord1sp[,-1],
+              predictors = example_vars,
+              models_dir = "./setupsdmdatanul",
+              real_absences = NULL,
+              buffer_type = NULL, # no buffer
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+# checking the output
+head(a)
+# plotting background point generation
+knitr::include_graphics("./setupsdmdatanul/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
+
+## `setup_sdmdata` with maximum distance
+
+Here we specify `buffer_type = max` to use maximum distance between occurrence points to perform background point generation.
+
+```{r sdmdatamax, eval = T}
+# background point generation inside setup_sdmdata with maximum distance
+b <- setup_sdmdata(species_name = especies[1],
+              occurrences = coord1sp[,-1],
+              predictors = example_vars,
+              models_dir = "./setupsdmdatamax",
+              real_absences = NULL,
+              buffer_type = "max", # maximum distance between points
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+# chacking the output
+head(b)
+# plotting backgrounf point generation
+knitr::include_graphics("./setupsdmdatamax/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
+
+## `setup_sdmdata` with mean distance
+
+Here we specify `buffer_type = mean` to use maximum distance between occurrence points to perform background point generation.
+
+```{r sdmdatamean, eval = T}
+# background point generation inside setup_sdmdata with mean distance
+c <- setup_sdmdata(species_name = especies[1],
+              occurrences = coord1sp[,-1],
+              predictors = example_vars,
+              models_dir = "./setupsdmdatamean",
+              real_absences = NULL,
+              buffer_type = "mean", # setting mean distance between occurrence points
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+# checking the output
+head(c)
+# plotting background point generation
+knitr::include_graphics("./setupsdmdatamean/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
+
+## `setup_sdmdata` with median of distance between occurrence points
+
+Here we specify `buffer_type = median` to use median of distance between occurrence points to perform background point generation.
+
+```{r sdmdatamedian, eval = T}
+# background point generation inside setup_sdmdata with mean distance
+d <- setup_sdmdata(species_name = especies[1],
+              occurrences = coord1sp[,-1],
+              predictors = example_vars,
+              models_dir = "./setupsdmdatamed",
+              real_absences = NULL,
+              buffer_type = "median", # median of distance between occcurrence points
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+# checking the output
+head(d)
+# plotting background point generation
+knitr::include_graphics("./setupsdmdatamed/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
+
+## `setup_sdmdata` with a specific distance between occurrence points
+
+Here we specify `buffer_type = distance` and `dist_buf = 5` to use 5 km buffer from each occurrence point to perform background point generation. Note that it is mandatory to set `dist_buf` when using a distance buffer. 
+
+```{r sdmdatadist, eval = T}
+# background point generation inside setup_sdmdata with a specific distance
+e <- setup_sdmdata(species_name = especies[1],
+              occurrences = coord1sp[,-1],
+              predictors = example_vars,
+              models_dir = "./setupsdmdatadist",
+              real_absences = NULL,
+              buffer_type = "distance", # specific distance
+              dist_buf = 5, # must set dist_buf!
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+# checking the output
+head(e)
+# plotting the background point generation
+knitr::include_graphics("./setupsdmdatadist/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
+
+# Effect of different types of buffer on model projection and evaluation
+
+Now we want to inspect how different types of buffer affect the prediction of the species distribution model. 
+
+## Using no buffer on model predictions
+
+Here, we use the algorithm `maxent` without any buffer to generate a model for the species *Eugenia florida*. 
+
+A simple model with no buffer:
+
+```{r enm1, message = F, eval = T}
+# running a maxent model for Eugenia florida with no buffer
+no_buf <- do_any(species_name = especies[1], # sp 1 Eugenia florida
+                 occurrences = coord1sp[, -1], # coordinates for the species
+                 predictors = example_vars, # example environmental data
+                 models_dir = "./buftest1",
+                 algo = "maxent", # maxent algorithm
+                 clean_dupl = T,
+                 clean_na = T)
+# creating an raster object with the output of the model
+no_buf_m <- raster("./buftest1/Eugenia florida DC./present/partitions/maxent_cut_Eugenia florida DC._1_1.tif")
+# plotting the model
+plot(no_buf_m)
+# adding political limts to the map
+maps::map(,,add = T)
+```
+
+## Using `median` buffer on model predictions
+
+Again, we use the algorithm `algo=maxent` but now we set `buffer_type=median` to generate a model for the species *Eugenia florida*. 
+
+With a median buffer:
+
+```{r enm2, message = F, eval = F}
+# Running a maxent model for E. florida with a median buffer
+mn_buf <- do_any(species_name = especies[1], # sp 1 Eugenia florida
+                 occurrences = coord1sp[, -1], # coodinates for the species
+                 predictors = example_vars, # environmental layers
+                 models_dir = "./buftest2",
+                 algo = "maxent", # setting maxent algorithm
+                 clean_dupl = T,
+                 clean_na = T, 
+                 buffer_type = "median") # setting median buffer
+# creating a raster object with the output of the model
+mn_buf_m <- raster("./buftest2/Eugenia florida DC./present/partitions/maxent_cut_Eugenia florida DC._1_1.tif")
+# plotting the model
+plot(mn_buf_m)
+# adding political limits to map
+maps::map(,,add = T)
+```
+
+## Comparing no buffer with `median` buffer
+
+Fitting and evaluating the models with different background samples has a different outcome: the model with a median has a slightly worse performance **BUT** a tendency **NOT** to overfit. 
+
+```{r remedy001, fig.cap="Comparing the sdmdata datasets", eval = T, echo=FALSE, fig.width=6, fig.height=3} 
+
+knitr::include_graphics("./buftest1/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png") ;
+knitr::include_graphics("./buftest2/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
+
+# Effect of buffer on the background data in MaxEnt
+
+Let's create a dataset for training and test using `setup_sdmdata`: 
+
+```{r maxent, cache = F, eval = T}
+# Creating the test data set 
+sdmdata_test <- setup_sdmdata(species_name = especies[1],
+                              occurrences = coord1sp,
+                              predictors = example_vars,
+                              models_dir = "./sdmdatatestmaxent",
+                              real_absences = NULL,
+                              buffer_type = "median",
+                              n_back = 500,
+                              partition_type = "bootstrap",
+                              boot_n = 1,
+                              boot_proportion = 0.7) # 70% of original data
+
+```
+
+The training test corresponds to: 
+
+```{r}
+# checking the sdmdata_test
+head(sdmdata_test)
+```
+
+The column `pa` in `sdmdata_test` corresponds to presences and absences and `0` in `boot1` corresponds to the training data set.
+
+```{r, eval = F}
+# counting presences and absences in training and test data sets
+count(sdmdata_test, pa, boot1)
+```
+
+Let's create three objects: one for the training data set named `prestrain` and two for the test data set being one for presences (`prestest`) and other for absences (`backtest`).
+
+```{r, eval = F}
+# the training points
+prestrain <- sdmdata_test %>%
+    filter(boot1 == 0, pa == 1) %>% select(lon, lat)
+# the test points
+## presence test points
+prestest  <- sdmdata_test %>% filter(boot1 == 1, pa == 1) %>% select(lon, lat)
+## absence test points
+backtest  <- sdmdata_test %>% filter(boot1 == 1, pa == 0) %>% select(lon, lat)
+```
+
+We want to know if there are differences when you fit a model to the buffer environmental space, especially maxent. 
+
+First, we crop the environmental data to our buffer 
+
+```{r remedy002, cache = F, eval = T}
+### PAREI AQUI DE REVISAR!
+cropped_pred <- ModelR::crop_model(example_vars, buf.med)
+plot(cropped_pred[[1]])
+```
+
+#### For Bioclim, Mahal, domain, it doesn't make a difference
+
+```{r bioclim, eval = F}
+b  <- dismo::bioclim(example_vars, prestrain)
+b2 <- dismo::bioclim(cropped_pred, prestrain)
+identical(b,b2)
+```
+
+```{r mahal, eval = F}
+c  <- dismo::mahal(example_vars, prestrain)
+c2 <- dismo::mahal(cropped_pred, prestrain)
+identical(c,c2)
+```
+
+```{r dom, eval = F}
+dm  <- dismo::domain(example_vars, prestrain)
+dm2 <- dismo::domain(cropped_pred, prestrain)
+identical(dm, dm2)
+```
+
+
+#### But for Maxent, as an algorithm that uses the background data, it does
+
+```{r max, eval = F}
+mx  <- dismo::maxent(example_vars, prestrain)
+mx2 <- dismo::maxent(cropped_pred, prestrain)
+identical(mx, mx2)
+```
+
+Let's project these models
+
+```{r proj, fig.height= 8, eval = F}
+mod_cont1 <- dismo::predict(example_vars, mx)
+mod_cont2 <- dismo::predict(example_vars, mx2)
+par(mfrow = c(2, 1), mar = c(2, 2, 2, 2))
+plot(mod_cont1, main = "maxent fit with the whole environmental background")
+plot(mod_cont2, main = "maxent fit with the buffered environmental background")
+```
+
+The model with the largest background tends to overfit to the known distribution, while the model fit within the buffer and projected to the largest background predicts more areas outside the known distribution. 
+
+Let's evaluate these models
+
+```{r, eval = F}
+library(dismo)
+
+eval_mx  <- dismo::evaluate(p = prestest,
+                     a = backtest,
+                     model = mx,
+                     x = example_vars)
+eval_mx2 <-  dismo::evaluate(p = prestest,
+                            a = backtest,
+                            model = mx2,
+                            x = example_vars)
+
+eval_mx
+eval_mx2
+(TSS <- max(eval_mx@TPR + eval_mx@TNR) - 1)
+(TSS2 <- max(eval_mx2@TPR + eval_mx2@TNR) - 1)
+```
+
+The model fit within the buffer has a better predictive capacity according to their TSSvalues.
+
+Let's compare this as implemented in the package
+
+
+## Maxent with no buffer
+
+```{r, eval = F}
+
+no_buf <- do_any(species_name = especies[1],
+                 occurrences = coord1sp[, -1],
+                 predictors = example_vars,
+                 models_dir = "./maxenttest",
+                 algo = "maxent",
+                 clean_dupl = T,
+                 clean_na = T,
+                 buffer_type = NULL)
+
+no_buf_m <- raster("./maxenttest//Eugenia florida DC./present/partitions/maxent_cut_Eugenia florida DC._1_1.tif")
+plot(no_buf_m)
+maps::map(,,add = T)
+knitr::include_graphics("./maxenttest/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+no_buf$TSS
+```
+
+## Maxent with a median buffer
+
+```{r mxbufmedian, eval = F}
+mx_buf <- do_any(species_name = especies[1],
+                 occurrences = coord1sp[, -1],
+                 predictors = example_vars,
+                 models_dir = "./maxentmax",
+                 algo = "maxent",
+                 clean_dupl = T,
+                 clean_na = T, 
+                 buffer_type = "median")
+
+no_buf_m <- raster("./maxentmax/Eugenia florida DC./present/partitions/maxent_cut_Eugenia florida DC._1_1.tif")
+plot(no_buf_m)
+maps::map(,,add = T)
+knitr::include_graphics("./maxentmax/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+mx_buf$TSS
+```
+
+## Maxent with a distance buffer
+
+```{r mxbufdist, eval = T}
+mx_dbuf <- do_any(species_name = especies[1],
+                 occurrences = coord1sp[, -1],
+                 predictors = example_vars,
+                 models_dir = "./maxentdist",
+                 algo = "maxent",
+                 clean_dupl = T,
+                 clean_na = T, 
+                 buffer_type = "distance",
+                 dist_buf = 4)
+
+#dbuf_mx <- raster("./maxentdist/Eugenia florida DC./present/partitions/maxent_cut_Eugenia florida DC._1_1.tif")
+#plot(dbuf_mx)
+#maps::map(,,add = T)
+#knitr::include_graphics("./maxentdist/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+#dbuf_mx$TSS
+```
+
+#test del error 
+
+```{r remedy003, cache = F, eval = F}
+library(rgbif)
+ulex <- occ_data(scientificName = "Ulex europaeus", limit = 1000)
+maps::map()
+pts <- data.frame(lon = ulex$data$decimalLongitude, 
+                  lat = ulex$data$decimalLatitude)
+pts <- pts[complete.cases(pts),]
+head(pts)
+ulex.pt <- sp::SpatialPoints(pts)
+points(ulex$data$decimalLongitude, ulex$data$decimalLatitude)
+abline(v = 180)
+library(raster)
+w <- getData(name = "worldclim", res = 10, var = "prec")
+wmean <- mean(w)
+plot(wmean, legend = F)
+points(pts, pch = 19)
+
+# rd <- dismo::randomPoints(wmean,
+#                     n = 500,
+#                     excludep = T,
+#                     p = pts)
+buf <- create_buffer(occurrences = pts,
+                     buffer_type = "distance",
+                     dist_buf = 5,
+                     predictors = wmean)
+#poly <- raster::buffer(sp::SpatialPoints(pts),
+ #                      width = 500 * 1000,
+  #                     doEdge = T,
+   #                    dissolve = TRUE)
+#plot(poly)
+plot(buf, add = T, col = "blue")
+
+buf2 <- rgeos::gBuffer(spgeom = SpatialPoints(pts), byid = F, width = 5)
+#plot(buf2)
+### abline(v=180, lwd= 2)abline(v=180, lwd= 2)
+maps::map(, , add = T)
+#plot(poly)
+plot(buf2, add = T, col = "blue")
+max(pts$lon)
+
+maps::map(, , add = T)
+#plot(poly)
+plot(buf, add = T, col = "blue")
+max(pts$lon)
+```
+
+
+## Small occurrence dataset
+
+Sometimes if the resulting dimensions of the buffer are too small 
+`randomPoints()`will have trouble to sample `n_back` absence points in it.
+
+```{r remedy004, eval = F}
+
+plot(predictor, legend = F)
+points(train_set[,2:3], col = "red", pch = 19)
+points(test_set[,2:3], col = "blue", pch = 19)
+cc <- coord1sp[,c(2,3)]
+crs(predictor)
+sdmdata_test <- setup_sdmdata(species_name = especies[1],
+                              occurrences = cc,
+                              predictors = example_vars,
+                              models_dir = "./tryfn",
+                              real_absences = NULL,
+                              buffer_type = "median",
+                              n_back = 2000000,
+                              partition_type = "bootstrap",
+                              boot_n = 1,
+                              boot_proportion = 0.7)
+
+```

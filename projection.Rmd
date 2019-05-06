@@ -1,0 +1,156 @@
+---
+title: "Projecting models"
+author: "Andrea Sánchez Tapia"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
+```
+    
+```{r}
+library(rJava)
+library(raster)
+#library(ModelR)
+devtools::load_all("../../ModelR")
+library(dplyr)
+```
+
+# Dataset
+
+```{r}
+especies <- unique(coordenadas$sp)
+coord1sp <- dplyr::filter(coordenadas, sp == especies[1])
+head(coord1sp)
+dim(coord1sp)
+ceiling(0.7 * nrow(coord1sp))
+set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
+train_set <- coord1sp[set,]
+test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
+
+```
+
+# Fitting and projection datasets
+
+We want to fit everything in a small area around the occurrence points (generated through a "median distance buffer") and project it to other sample rasterStacks 
+
+```{r, fig.height = 6}
+fit_data <- stack("./env/cropped_proj.tif")
+proj_folder <- "./env/proj/proj1/"
+proj_data <- list.files(proj_folder, full.names = T) %>% stack() %>% .[[1]]
+pts <- SpatialPoints(coord1sp[,c(2,3)])
+
+    plot(!is.na(example_vars[[1]]), legend = F, add = F)
+plot(fit_data[[1]], legend = F, add = T)
+plot(proj_data[[1]], legend = F, add = T)
+#points(train_set[,2:3], col = "red", pch = 19)
+#points(test_set[,2:3], col = "blue", pch = 19)
+
+```
+
+
+## Model projection
+
+A simple model with no buffer and no projection: 
+
+```{r enm1, message = F, eval=F}
+no_proj <- do_enm(species_name = especies[1],
+                 occurrences = coord1sp[, -1],
+                 predictors = fit_data,
+                 models_dir = "./fit",
+                 bioclim = T,
+                 svm.k = T,
+                 clean_dupl = T,
+                 clean_na = T)
+
+no_proj.bc <- raster("./fit/Eugenia florida DC./present/partitions/bioclim_cut_Eugenia florida DC._1_1.tif")
+no_proj.svmk <- raster("./fit/Eugenia florida DC./present/partitions/svm.k_cut_Eugenia florida DC._1_1.tif")
+plot(no_proj.bc)
+maps::map(, , add = T)
+plot(no_proj.svmk)
+maps::map(, , add = T)
+```
+
+
+We project to a series of projections in the specified folder: "./env/proj"
+
+```{r proj, message = F, eval = T}
+yes_proj <- do_enm(species_name = especies[1],
+                 occurrences = coord1sp[, -1],
+                 predictors = fit_data,
+                 models_dir = "./projtest",
+                 bioclim = T,
+                 domain = T, 
+                 glm = T,
+                 mahal = T,
+                 maxent = T,
+                 rf = T,
+                 svm.k = T,
+                 svm.e = T,
+                 brt = T,
+                 clean_dupl = T,
+                 clean_na = T,
+                 project_model = T,
+                 proj_data_folder = "./env/proj",
+                 write_png = T)
+```
+
+```{r list_results}
+no_proj.bc <- raster("./projtest/Eugenia florida DC./present/partitions/bioclim_cont_Eugenia florida DC._1_1.tif")
+no_proj.svmk <- raster("./projtest/Eugenia florida DC./present/partitions/svm.k_cont_Eugenia florida DC._1_1.tif")
+yes_proj1.bc <- raster("./projtest/Eugenia florida DC./proj1/partitions/bioclim_cont_Eugenia florida DC._1_1.tif")
+yes_proj1.svmk <- raster("./projtest/Eugenia florida DC./proj1/partitions/svm.k_cont_Eugenia florida DC._1_1.tif")
+yes_proj2.svmk <- raster("./projtest/Eugenia florida DC./proj2/partitions/svm.k_cont_Eugenia florida DC._1_1.tif")
+yes_proj2.bc <- raster("./projtest/Eugenia florida DC./proj2/partitions/bioclim_cont_Eugenia florida DC._1_1.tif")
+yes_proj3 <- raster("./projtest/Eugenia florida DC./proj3/partitions/svm.k_cont_Eugenia florida DC._1_1.tif")
+yes_proj4 <- raster("./projtest/Eugenia florida DC./proj4/partitions/svm.k_cont_Eugenia florida DC._1_1.tif")
+plot(no_proj.bc, main = "no proj bioclim")
+maps::map(,,add = T)
+plot(no_proj.svmk, main = "no proj svm.k")
+maps::map(,,add = T)
+plot(yes_proj1.bc, main = "proj1 bioclim")
+maps::map(,,add = T)
+plot(yes_proj1.svmk, main = "proj1 svm.k")
+maps::map(,,add = T)
+plot(yes_proj2.bc, main = "proj2 bioclim")
+maps::map(,,add = T)
+plot(yes_proj2.svmk, main = "proj2 svmk")
+maps::map(,,add = T)
+plot(yes_proj3)
+maps::map(,,add = T)
+plot(yes_proj4)
+maps::map(,,add = T)
+```
+
+# Final model projection
+
+
+The `final_model` function has a parameter `proj_dir` that allows it to be run using any projection. 
+We can project the models fit to the present 
+
+```{r remedy001}
+args(final_model)
+final_model(species_name = especies[1],
+            models_dir = "./projtest")
+```
+
+or the projected models, 
+```{r remedy002}
+args(final_model)
+final_model(species_name = especies[1],
+            models_dir = "./projtest",
+            proj_dir = "proj1")
+final_model(species_name = especies[1],
+            models_dir = "./projtest",
+            proj_dir = "proj2")
+final_model(species_name = especies[1],
+            models_dir = "./projtest",
+            proj_dir = "proj3")
+final_model(species_name = especies[1],
+            models_dir = "./projtest",
+            proj_dir = "proj4")
+```

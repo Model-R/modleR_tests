@@ -1,0 +1,10 @@
+# ignore .Rproj
+.Rproj
+.Rproj.user
+
+# ignore output_folders
+setupsdmdata/
+
+# ignore html outputs
+.html
+
