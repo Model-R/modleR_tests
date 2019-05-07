@@ -7,7 +7,7 @@ output:
   pdf_document: default
 ---
 
-Here we test the function `setup_sdmdata` function and its different parametrization options. 
+Here we test the function `setup_sdmdata` and its different parametrization options. This function prepares the data to run the models with `do_any` or `do_many` functions. It creates an object in the workspace to be used in `do_any` or `do_many` and writes two csv files with metadata and sdmdata.   
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
@@ -19,6 +19,7 @@ Loading required packages.
 library(rJava)
 library(raster)
 library(modleR)
+library(maps)
 #eu estou usando uma cópia local para desenvolvimento
 #devtools::load_all("../../ModelR")
 #mas o pacote pode ser instalado assim: 
@@ -26,9 +27,9 @@ library(modleR)
 
 ```
 
-# We use a standard dataset from the package. 
+# Selecting one species as an example
 
-We select only one species from the example data in the package. We separate data from species # 01 into into train (70% of data) and test (30% of data) data sets. 
+We select only one species from the example data in the package. 
 
 ```{r dataset}
 # creating a vector with species names
@@ -37,28 +38,16 @@ especies <- unique(coordenadas$sp)
 coord1sp <- dplyr::filter(coordenadas, sp == especies[1])
 head(coord1sp)
 dim(coord1sp) # 341 records
-# fixing seed for reproductibility
-set.seed(42)
-# creating train (70% of data) and test subsets for species #1 
-## sampling 70% of data
-set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
-## creating train data set
-train_set <- coord1sp[set,]
-## creating test data set
-test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
 ```
 
+Plotting records of `r especies[1]`
 
-Then, we plot train and test data sets with environmental predictors. 
-
-```{r plotdataset}
+```{r}
 predictor <- example_vars[[1]]
-pts <- SpatialPoints(coord1sp[,c(2,3)])
 plot(predictor, legend = F)
-points(train_set[,2:3], col = "red", pch = 19)
-points(test_set[,2:3], col = "blue", pch = 19)
-legend("topright", c("train data set", "test data set"), pch=19, col=c("red", "blue"))
+points(lat ~ lon, data=coord1sp)
 ```
+
 
 # Function arguments
 
@@ -68,8 +57,11 @@ Lets explore different arguments in `setup_sdmdata` function.
 args(setup_sdmdata)
 ```
 
+## Default options
 
-```{r remedy001}
+First, running with default options. Pseudo-absences are generated in the entire area of the predictor variables and data is partitioned following bootstrap procedures. 
+
+```{r }
 a <- setup_sdmdata(species_name = especies[1], # species #01
               occurrences = coord1sp[,-1], 
               predictors = example_vars,
@@ -81,17 +73,50 @@ a <- setup_sdmdata(species_name = especies[1], # species #01
               seed = 512)
 ```
 
-Exploring the output from `setup_sdmdata`. 
+Exploring the output object from `setup_sdmdata`. 
 
 ```{r remedy002}
 head(a)
 ```
 
+
 ```{r remedy003}
 knitr::include_graphics("./setupsdmdata/setupsdmdatam/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
 ```
 
-#### buffer mean
+
+### partitioning data with crossvalidation
+
+For crossvalidation we need to specify the number of runs with `cv_n` and partitions with `cv_partitions`. 
+
+```{r remedy001}
+aa <- setup_sdmdata(species_name = especies[1], # species #01
+              occurrences = coord1sp[,-1], 
+              predictors = example_vars,
+              models_dir = "./setupsdmdata/setupsdmdatam_cross",
+              partition_type = "crossvalidation",
+              cv_n=1, 
+              cv_partitions=5,
+              real_absences = NULL,
+              buffer_type = NULL,
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+```
+
+Exploring the new output object.
+
+```{r}
+head(aa)
+```
+
+
+
+## Exploring different generations of pseudo-absences with `buffer_type`
+
+### mean buffer
+
+Buffer for pseudo-absence generation based on mean distance between occurrence points.
 
 ```{r remedy0031}
 
@@ -116,7 +141,9 @@ knitr::include_graphics("./setupsdmdata/setupsdmdatan/Eugenia florida DC./presen
 ```
 
 
-#buffer median
+### buffer median
+
+Buffer for pseudo-absence generation based on median of distance between occurrence points.
 
 ```{r remedy005}
 c <- setup_sdmdata(species_name = especies[1],
@@ -139,7 +166,9 @@ head(c)
 knitr::include_graphics("./setupsdmdata/setupsdmdatap/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
 ```
 
-#buffer max
+### buffer max
+
+Buffer for pseudo-absence generation based on maximum distance between occurrence points.
 
 ```{r remedy0051}
 d <- setup_sdmdata(species_name = especies[1],
@@ -162,7 +191,9 @@ head(d)
 knitr::include_graphics("./setupsdmdata/setupsdmdatax/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
 ```
 
-#buffer dist
+### buffer dist
+
+Buffer for pseudo-absence generation based on specific distance between occurrence points. In this case `dist_buf` argument must be specified.
 
 ```{r remedy00512}
 e <- setup_sdmdata(species_name = especies[1],
@@ -185,3 +216,6 @@ head(e)
 ```{r remedy00922}
 knitr::include_graphics("./setupsdmdata/setupsdmdataxd/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
 ```
+
+### user defined buffer
+
