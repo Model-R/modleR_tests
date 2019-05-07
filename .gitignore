@@ -2,6 +2,9 @@
 .Rproj
 .Rproj.user
 
+# ignore .Rhistory
+.Rhistory
+
 # ignore output_folders
 setupsdmdata/
 
