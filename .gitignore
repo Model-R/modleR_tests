@@ -7,6 +7,7 @@
 
 # ignore output_folders
 setupsdmdata/
+projection/
 
 # ignore html outputs
 .html
