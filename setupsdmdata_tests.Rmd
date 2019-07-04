@@ -20,6 +20,8 @@ library(rJava)
 library(raster)
 library(modleR)
 library(maps)
+library(maptools)
+
 #eu estou usando uma cópia local para desenvolvimento
 #devtools::load_all("../../ModelR")
 #mas o pacote pode ser instalado assim: 
@@ -217,5 +219,29 @@ head(e)
 knitr::include_graphics("./setupsdmdata/setupsdmdataxd/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
 ```
 
-### user defined buffer
+### user defined buffer: the user provide a shapefile. Maptools package to read the ".shp" file
+
+myshapefile <- readShapePoly("data/myshapefile.shp")
+
+```{r remedyxxx}
+f <- setup_sdmdata(species_name = especies[1],
+              occurrences = coord1sp[,-1],
+              predictors = example_vars,
+              models_dir = "./setupsdmdata/setupsdmdataub",
+              real_absences = NULL,
+              buffer_type = "user",
+              buffer_shape = myshapefile,
+              clean_dupl = T,
+              clean_nas = T,
+              seed = 512)
+```
+
+
+```{r remedyYYY}
+head(f)
+```
+
+```{r remedyzzz}
+knitr::include_graphics("./setupsdmdata/setupsdmdataub/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+```
 
