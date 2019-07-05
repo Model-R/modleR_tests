@@ -617,7 +617,7 @@ points(lat ~ lon, data=coord1sp)</code></pre>
 </div>
 <div id="user-defined-buffer-the-user-provide-a-shapefile.-maptools-package-to-read-the-.shp-file" class="section level3">
 <h3>user defined buffer: the user provide a shapefile. Maptools package to read the “.shp” file</h3>
-<p>myshapefile &lt;- readShapePoly(“D:/git_GITHUB/modler_test/data/myshapefile.shp”)</p>
+<p>myshapefile &lt;- readShapePoly(“data/myshapefile.shp”)</p>
 <pre class="r"><code>f &lt;- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
