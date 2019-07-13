@@ -4,7 +4,8 @@ Codes for parametrization tests of modleR package
 
 projection.Rmd 
 - tests projection in do_many and final_models- done
-- still having problems in the last chunk- when eval=FALSE it works. All outputs were done
+- still having problems in the last chunk- When eval=FALSE it works. All outputs were done.
+  
   setupsdmdata_tests.Rmd
 - tests different buffer types- done
 - still needs to incorporate user defined buffer- done
