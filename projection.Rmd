@@ -157,10 +157,14 @@ maps::map(,,add = T)
 
 The `final_model` function has a parameter `proj_dir` that allows it to be run using any projection. We can project the models fit to the present.
 
-```{r remedy001}
+```{r remedy001, eval=FALSE}
 args(final_model)
-final_model(species_name = especies[1],
-            models_dir = "projection/projtest")
+
+final_model_present <- final_model(species_name = especies[1],
+            models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
+            proj_dir = "present")
 ```
 
 or the projected models, 
@@ -168,19 +172,159 @@ or the projected models,
 ```{r remedy002, eval=FALSE}
 args(final_model)
 
-final_model(species_name = especies[1], #select_partitions = FALSE,
+final_model_proj1 <- final_model(species_name = especies[1], #select_partitions = FALSE,
             models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
             proj_dir = "proj1")
 
-final_model(species_name = especies[1],
+final_model_proj2 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
             proj_dir = "proj2")
 
-final_model(species_name = especies[1],
+final_model_proj3 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
             proj_dir = "proj3")
 
-final_model(species_name = especies[1],
+final_model_proj4 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
             proj_dir = "proj4")
+```
+
+``````{r list_results 2}
+final_present_bc <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._bioclim_raw_mean.tif")
+final_present_brt <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._brt_raw_mean.tif")
+final_present_domain <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._domain_raw_mean.tif")
+final_present_glm <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._glm_raw_mean.tif")
+final_present_mahal <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._mahal_raw_mean.tif")
+final_present_rf <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._rf_raw_mean.tif")
+final_present_svme <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._svme_raw_mean.tif")
+final_present_svmk <- raster("projection/projtest/Eugenia florida DC./present/final_models/Eugenia florida DC._svmk_raw_mean.tif")
+
+final_proj1_bc <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._bioclim_raw_mean.tif")
+final_proj1_brt <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._brt_raw_mean.tif")
+final_proj1_domain <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._domain_raw_mean.tif")
+final_proj1_glm <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._glm_raw_mean.tif")
+final_proj1_mahal <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._mahal_raw_mean.tif")
+final_proj1_rf <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._rf_raw_mean.tif")
+final_proj1_svme <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._svme_raw_mean.tif")
+final_proj1_svmk <- raster("projection/projtest/Eugenia florida DC./proj1/final_models/Eugenia florida DC._svmk_raw_mean.tif")
+
+final_proj2_bc <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._bioclim_raw_mean.tif")
+final_proj2_brt <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._brt_raw_mean.tif")
+final_proj2_domain <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._domain_raw_mean.tif")
+final_proj2_glm <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._glm_raw_mean.tif")
+final_proj2_mahal <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._mahal_raw_mean.tif")
+final_proj2_rf <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._rf_raw_mean.tif")
+final_proj2_svme <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._svme_raw_mean.tif")
+final_proj2_svmk <- raster("projection/projtest/Eugenia florida DC./proj2/final_models/Eugenia florida DC._svmk_raw_mean.tif")
+
+final_proj3_bc <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._bioclim_raw_mean.tif")
+final_proj3_brt <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._brt_raw_mean.tif")
+final_proj3_domain <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._domain_raw_mean.tif")
+final_proj3_glm <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._glm_raw_mean.tif")
+final_proj3_mahal <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._mahal_raw_mean.tif")
+final_proj3_rf <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._rf_raw_mean.tif")
+final_proj3_svme <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._svme_raw_mean.tif")
+final_proj3_svmk <- raster("projection/projtest/Eugenia florida DC./proj3/final_models/Eugenia florida DC._svmk_raw_mean.tif")
+
+final_proj4_bc <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._bioclim_raw_mean.tif")
+final_proj4_brt <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._brt_raw_mean.tif")
+final_proj4_domain <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._domain_raw_mean.tif")
+final_proj4_glm <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._glm_raw_mean.tif")
+final_proj4_mahal <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._mahal_raw_mean.tif")
+final_proj4_rf <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._rf_raw_mean.tif")
+final_proj4_svme <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._svme_raw_mean.tif")
+final_proj4_svmk <- raster("projection/projtest/Eugenia florida DC./proj4/final_models/Eugenia florida DC._svmk_raw_mean.tif")
+
+plot(final_present_bc, main = "Bioclim Final Present")
+maps::map(,,add = T)
+plot(final_present_brt, main = "BRT Final Present")
+maps::map(,,add = T)
+plot(final_present_domain, main = "Domain Final Present")
+maps::map(,,add = T)
+plot(final_present_glm, main = "GLM Final Present ")
+maps::map(,,add = T)
+plot(final_present_mahal, main = "Mahalanobis Final Present")
+maps::map(,,add = T)
+plot(final_present_rf, main = "Random Forest Final Present")
+maps::map(,,add = T)
+plot(final_present_svme, main = "SVME Final Present")
+maps::map(,,add = T)
+plot(final_present_svmk, main = "SVMK Final Present")
+maps::map(,,add = T)
+
+plot(final_proj1_bc, main = "Bioclim Final Proj1")
+maps::map(,,add = T)
+plot(final_proj1_brt, main = "BRT Final Proj1")
+maps::map(,,add = T)
+plot(final_proj1_domain, main = "Domain Final Proj1")
+maps::map(,,add = T)
+plot(final_proj1_glm, main = "GLM Final Proj1 ")
+maps::map(,,add = T)
+plot(final_proj1_mahal, main = "Mahalanobis Final Proj1")
+maps::map(,,add = T)
+plot(final_proj1_rf, main = "Random Forest Final Proj1")
+maps::map(,,add = T)
+plot(final_proj1_svme, main = "SVME Final Proj1")
+maps::map(,,add = T)
+plot(final_proj1_svmk, main = "SVMK Final Proj1")
+maps::map(,,add = T)
+
+plot(final_proj2_bc, main = "Bioclim Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_brt, main = "BRT Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_domain, main = "Domain Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_glm, main = "GLM Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_mahal, main = "Mahalanobis Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_rf, main = "Random Forest Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_svme, main = "SVME Final Proj2")
+maps::map(,,add = T)
+plot(final_proj2_svmk, main = "SVMK Final Proj2")
+maps::map(,,add = T)
+
+plot(final_proj3_bc, main = "Bioclim Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_brt, main = "BRT Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_domain, main = "Domain Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_glm, main = "GLM Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_mahal, main = "Mahalanobis Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_rf, main = "Random Forest Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_svme, main = "SVME Final Proj3")
+maps::map(,,add = T)
+plot(final_proj3_svmk, main = "SVMK Final Proj3")
+maps::map(,,add = T)
+
+plot(final_proj4_bc, main = "Bioclim Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_brt, main = "BRT Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_domain, main = "Domain Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_glm, main = "GLM Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_mahal, main = "Mahalanobis Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_rf, main = "Random Forest Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_svme, main = "SVME Final Proj4")
+maps::map(,,add = T)
+plot(final_proj4_svmk, main = "SVMK Final Proj4")
+maps::map(,,add = T)
 ```
