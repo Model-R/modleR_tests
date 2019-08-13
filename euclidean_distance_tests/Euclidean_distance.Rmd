@@ -12,10 +12,6 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
-```{r remedy}
-setwd("~/Documents/1 ModelR/package docs/4 tests euclidean")
-
-```
 
 ```{r}
 library(rJava)
