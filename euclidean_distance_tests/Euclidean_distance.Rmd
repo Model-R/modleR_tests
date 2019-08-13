@@ -12,20 +12,19 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
-
 ```{r}
 library(rJava)
 library(raster)
 #library(ModelR)
-devtools::load_all("../../ModelR")
+devtools::load_all("../../../modelr_pkg/")
 library(dplyr)
 ```
 
 # Dataset
 
 ```{r}
-especies <- unique(coordenadas$sp)
-coord1sp <- dplyr::filter(coordenadas, sp == especies[1])
+especies <- names(coordenadas)[1]
+coord1sp <- coordenadas[[1]]
 head(coord1sp)
 dim(coord1sp)
 ceiling(0.7 * nrow(coord1sp))
@@ -37,87 +36,76 @@ test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
 
 # Fitting and projection datasets
 
-We want to fit everything in a small area around the occurrence points (generated through a "median distance buffer") and project it to other sample rasterStacks 
 
-A simple model with no buffer and no projection: 
-
-```{r enm1, message = F, eval = F}
-fit_data <- stack("./env/cropped_proj.tif")
-no_proj <- do_enm(species_name = especies[1],
-                 occurrences = coord1sp[, -1],
-                 predictors = fit_data,
-                 models_dir = "./fit",
-                 centroid = T,
-                 mindist = T,
-                 clean_dupl = T,
-                 clean_nas = T)
-
-no_proj.c <- raster("./fit/Eugenia florida DC./present/partitions/centroid_cont_Eugenia florida DC._1_1.tif")
-#no_proj.m <- raster("./fit/Eugenia florida DC./present/partitions/mindist_cont_Eugenia florida DC._1_1.tif")
-par(mfrow = c(1,2))
-plot(no_proj.c, main = "centroid")
-maps::map(, , add = T)
-plot(no_proj.m, main = "mindist")
-maps::map(, , add = T)
+```{r enm1, message = F, eval = T}
+fit_data <- raster::stack("./env/cropped_proj.tif")
 ```
-
-## New implementation
-
 
 ```{r remedy001}
-fit_data <- stack("/Users/Sanchez/Documents/1 ModelR/package docs/2 projection/env/cropped_proj.tif")
-source("/Users/Sanchez/Documents/1 ModelR/ModelR/R/euclidean.R")
 
-no_proj <- do_any2(species_name = especies[1],
-                 occurrences = coord1sp[, -1],
-                 predictors = fit_data,
-                 models_dir = "./eucl_test",
-                 algo = "centroid",
-                 #centroid = T,
-                 clean_dupl = T,
-                 clean_nas = T)
-no_proj.test <- raster("./eucl_test/Eugenia florida DC./present/partitions/centroid_cont_Eugenia florida DC._1_1.tif")
-plot(no_proj.test)
-#identical(no_proj.test, no_proj.c)
-par(mfrow = c(1,2))
-plot(no_proj.test)
-#plot(no_proj.c)
-no_proj.test
-#no_proj.c
+centroide1 <- modleR::euclidean(x = example_vars,
+                  occs = train_set[,c(2,3)],
+                  algo = "centroid")
+centroide2 <- modleR::euclidean(x = fit_data,
+                  occs = train_set[,c(2,3)],
+                  algo = "centroid")
+plot(centroide1)
+plot(centroide2)
+points(train_set[,c(2,3)])
+
 ```
 
-##mindist
-```{r remedy002}
+```{r mindist}
 
-no_proj <- do_any2(species_name = especies[1],
-                 occurrences = coord1sp[, -1],
-                 predictors = fit_data,
-                 models_dir = "./eucl_test",
-                 algo = "mindist",
-                 clean_dupl = T,
-                 clean_na = T)
-no_proj.test2 <- raster("./eucl_test/Eugenia florida DC./present/partitions/mindist_cont_Eugenia florida DC._1_1.tif")
-plot(no_proj.test2)
-par(mfrow = c(1,2))
-plot(no_proj.test2)
-no_proj.test2
+mindist1 <- modleR::euclidean(x = example_vars, 
+                  occs = train_set[,c(2,3)],
+                  algo = "mindist")
+mindist2 <- modleR::euclidean(x = fit_data, 
+                  occs = train_set[,c(2,3)],
+                  algo = "mindist")
+
+plot(mindist1)
+points(train_set[,c(2,3)])
+plot(mindist2)
+points(train_set[,c(2,3)])
 ```
+
+
+```{r}
+a <- rescale_layer(mindist1)
+plot(a)
+a>0.8
+plot(sort(values(a)))
+
+plot(a > 0.95, main = "dist > 0.95", col = c("white", "green"))
+plot(a > 0.99, main = "dist > 0.99", legend = F, add = T, col = c(NA, "red"))
+maps::map(,,,add = T)
+
+```
+
+
+```{r}
+setup <- setup_sdmdata(
+    species_name = especies[1],
+    occurrences = coord1sp[, -1],
+    predictors = fit_data,
+    models_dir = "./eucl")
+```
+
+```{r}
+centroid_no_proj <- do_any(species_name = especies[1],
+                  predictors = fit_data,
+                  write_png = T,
+                  algo = "centroid",
+                  models_dir = "./eucl")
+mindist_no_proj <- do_any(species_name = especies[1],
+                  predictors = fit_data,
+                  write_png = T,
+                  algo = "mindist",
+                  models_dir = "./eucl")
+```
+
 
 ## Model projection
 
-We project to a series of projections in the specified folder: "./env/proj"
 
-```{r proj, message = T, eval = F}
-yes_proj <- do_any2(species_name = especies[1],
-                    occurrences = coord1sp[, -1],
-                    predictors = fit_data,
-                    models_dir = "./projtest",
-                    algo = "centroid",
-                    #algo = "mindist",
-                    clean_dupl = T,
-                    clean_nas = T,
-                    project_model = T,
-                    proj_data_folder = "./env/proj",
-                    write_png = T,
-                    )
-```
