@@ -16,18 +16,22 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 library(rJava)
 library(raster)
 #library(ModelR)
-devtools::load_all("../../../modelr_pkg/")
+devtools::load_all("../../modleR")
 library(dplyr)
 ```
 
 # Dataset
 
-```{r}
+```{r dataset}
+## Creating an object with species names
 especies <- names(coordenadas)[1]
+# Selecting only coordinates for the first species
 coord1sp <- coordenadas[[1]]
 head(coord1sp)
 dim(coord1sp)
+# Subsetting data into training and test
 ceiling(0.7 * nrow(coord1sp))
+# Making a sample of 70% of species' records
 set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
 train_set <- coord1sp[set,]
 test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
@@ -37,18 +41,18 @@ test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
 # Fitting and projection datasets
 
 
-```{r enm1, message = F, eval = T}
+```{r vars, message = F, eval = T}
 fit_data <- raster::stack("./env/cropped_proj.tif")
 ```
 
-```{r remedy001}
+```{r centroide}
 
-centroide1 <- modleR::euclidean(x = example_vars,
-                  occs = train_set[,c(2,3)],
-                  algo = "centroid")
-centroide2 <- modleR::euclidean(x = fit_data,
-                  occs = train_set[,c(2,3)],
-                  algo = "centroid")
+centroide1 <- modleR::euclidean(predictors =example_vars,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "centroid")
+centroide2 <- modleR::euclidean(predictors = fit_data,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "centroid")
 plot(centroide1)
 plot(centroide2)
 points(train_set[,c(2,3)])
@@ -57,12 +61,12 @@ points(train_set[,c(2,3)])
 
 ```{r mindist}
 
-mindist1 <- modleR::euclidean(x = example_vars, 
-                  occs = train_set[,c(2,3)],
-                  algo = "mindist")
-mindist2 <- modleR::euclidean(x = fit_data, 
-                  occs = train_set[,c(2,3)],
-                  algo = "mindist")
+mindist1 <- modleR::euclidean(predictors = example_vars,
+                              occurrences = train_set[,c(2,3)],
+                              algo = "mindist")
+mindist2 <- modleR::euclidean(predictors = fit_data,
+                              occurrences = train_set[,c(2,3)],
+                              algo = "mindist")
 
 plot(mindist1)
 points(train_set[,c(2,3)])
@@ -71,10 +75,10 @@ points(train_set[,c(2,3)])
 ```
 
 
-```{r}
+```{r cut}
 a <- rescale_layer(mindist1)
 plot(a)
-a>0.8
+a > 0.8
 plot(sort(values(a)))
 
 plot(a > 0.95, main = "dist > 0.95", col = c("white", "green"))
@@ -85,24 +89,23 @@ maps::map(,,,add = T)
 
 
 ```{r}
-setup <- setup_sdmdata(
-    species_name = especies[1],
-    occurrences = coord1sp[, -1],
-    predictors = fit_data,
-    models_dir = "./eucl")
+setup <- setup_sdmdata(species_name = especies[1],
+                       occurrences = coord1sp[, -1],
+                       predictors = fit_data,
+                       models_dir = "./eucl")
 ```
 
 ```{r}
 centroid_no_proj <- do_any(species_name = especies[1],
-                  predictors = fit_data,
-                  write_png = T,
-                  algo = "centroid",
-                  models_dir = "./eucl")
+                           predictors = fit_data,
+                           write_png = T,
+                           algo = "centroid",
+                           models_dir = "./eucl")
 mindist_no_proj <- do_any(species_name = especies[1],
-                  predictors = fit_data,
-                  write_png = T,
-                  algo = "mindist",
-                  models_dir = "./eucl")
+                          predictors = fit_data,
+                          write_png = T,
+                          algo = "mindist",
+                          models_dir = "./eucl")
 ```
 
 

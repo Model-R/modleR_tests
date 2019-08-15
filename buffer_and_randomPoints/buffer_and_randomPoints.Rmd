@@ -1,5 +1,5 @@
 ---
-title: "Testing background point generation in Model-R"
+title: "Testing background point generation in modleR"
 author: "Andrea Sánchez-Tapia"
 date: "`r Sys.Date()`"
 output:
@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
 
 This workflow tests background point generation in `Model-R`. We perform tests with different types of buffer and different code options to sample pseudoabsences inside a geographic buffer. Later, we explore how different methods for sampling pseudoabsences results on different model predictions. 
 
-To run this example you will need `ModelR`and the additional packages `rJava`, `raster`, and `dplyr`. To check if they are already installed and install eventually missing packages run the code bellow.
+To run this example you will need `modleR`and the additional packages `rJava`, `raster`, and `dplyr`. To check if they are already installed and install eventually missing packages run the code bellow.
 
 ```{r,  message=FALSE, eval=FALSE}
 packages <- c("rJava", "raster", "dplyr", "devtools")
@@ -26,10 +26,10 @@ if(length(instpack)>0)
 }
 ```
 
-If you don't have `ModelR` installed, run:
+If you don't have `modleR` installed, run:
 
 ```{r,  eval=F}
-devtools::install_github("Model-R/modelr_pkg", ref="master")
+devtools::install_github("Model-R/modleR", ref="master")
 ```
 
 
@@ -39,32 +39,29 @@ Then, load all required packages.
 ```{r load}
 library(rJava)
 library(raster)
-#library(ModelR)
+#library(modleR)
 library(dplyr)
 #eu estou usando uma cópia local para desenvolvimento
-#devtools::load_all("../../ModelR")
-devtools::load_all("/home/sara/Dropbox/JBRJ/ModelR/modelr_pkg_local")
-#mas o pacote pode ser instalado assim: 
-#devtools::install_github("model-r/modelr_pkg", build_vignettes = TRUE, ref = "andrea")
-
+devtools::load_all("../../modleR")
+#devtools::load_all("/home/sara/Dropbox/JBRJ/modleR/modleR_pkg_local")
 ```
 
 # The example data set 
 
-We use a standard dataset inside the package `ModelR`. First, from `coordenadas` object we select only data from one species *Eugenia florida* and create one training set (70% of the data) and one test set (30% of the data) for the data. 
+We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Eugenia florida* and create one training set (70% of the data) and one test set (30% of the data) for the data. 
 
-```{r dataset}
+````{r dataset}
 ## Creating an object with species names
-especies <- unique(coordenadas$sp)
-# Selecting only coordinates for the first species Eugenia florida
-coord1sp <- dplyr::filter(coordenadas, sp == especies[1])
+especies <- names(coordenadas)[1]
+# Selecting only coordinates for the first species
+coord1sp <- coordenadas[[1]]
 head(coord1sp)
 dim(coord1sp)
 # Subsetting data into training and test
 ceiling(0.7 * nrow(coord1sp))
 # Making a sample of 70% of species' records
 set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
-# Crating training data set (70% of species' records)
+# Creating training data set (70% of species' records)
 train_set <- coord1sp[set,]
 # Creating test data set (other 30%)
 test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
@@ -87,7 +84,7 @@ points(test_set[,2:3], col = "blue", pch = 19)
 
 # Pseudoabsence selection without any buffer
 
-We now use `randomPoints` from `dismo` package and `create_buffer` from `ModelR` to extract background values without using a buffer.  
+We now use `randomPoints` from `dismo` package and `create_buffer` from `modleR` to extract background values without using a buffer.  
 
 First, directly from `randomPoints`.
 
@@ -104,7 +101,7 @@ points(rand, col = "red")
 
 And creating an object with `create_buffer` to be used in `randomPoints` function. We will use this code structure when generating background values with different types of buffer.
 
-```{r nobuffer modelR, echo = F, eval = T}
+```{r nobuffer modleR, echo = F, eval = T}
 # creating an object with coordinates values
 buf <- create_buffer(occurrences = coord1sp[,c(2,3)],
                      predictors = predictor)
@@ -237,7 +234,7 @@ points(buf.dist.p, col = "blue")
 
 # Within `setup_sdmdata`
 
-Another option for implementing no buffer or any type of buffer is using function `setup_sdmdata` from `ModelR`. In this case there's no need to call for `randomPoints` from `dismo` package since it is implemented inside `setup_sdmdata`. 
+Another option for implementing no buffer or any type of buffer is using function `setup_sdmdata` from `modleR`. In this case there's no need to call for `randomPoints` from `dismo` package since it is implemented inside `setup_sdmdata`. 
 
 ## `setup_sdmdata` without buffer
 
@@ -458,7 +455,7 @@ First, we crop the environmental data to our buffer
 
 ```{r remedy002, cache = F, eval = T}
 ### PAREI AQUI DE REVISAR!
-cropped_pred <- ModelR::crop_model(example_vars, buf.med)
+cropped_pred <- modleR::crop_model(example_vars, buf.med)
 plot(cropped_pred[[1]])
 ```
 
