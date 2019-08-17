@@ -33,9 +33,10 @@ dim(coord1sp)
 ceiling(0.7 * nrow(coord1sp))
 # Making a sample of 70% of species' records
 set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
+# Creating training data set (70% of species' records)
 train_set <- coord1sp[set,]
+# Creating test data set (other 30%)
 test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
-
 ```
 
 # Fitting and projection datasets

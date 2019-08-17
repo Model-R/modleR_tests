@@ -14,3 +14,6 @@ buffer_and_randomPoints.Rmd
 Euclidean_distance.Rmd
 small_dataset.Rmd
 - still not updated to work in the repo
+
+?dist
+
