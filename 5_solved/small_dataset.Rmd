@@ -8,6 +8,33 @@ pdf_document: default
 ---
 
 
+
+    ## Small occurrence dataset
+
+    Sometimes if the resulting dimensions of the buffer are too small
+`randomPoints()`will have trouble to sample `n_back` absence points in it.
+
+```{r remedy004, eval = F}
+
+plot(predictor, legend = F)
+points(train_set[,2:3], col = "red", pch = 19)
+points(test_set[,2:3], col = "blue", pch = 19)
+cc <- coord1sp[,c(2,3)]
+crs(predictor)
+sdmdata_test <- setup_sdmdata(species_name = especies[1],
+                              occurrences = cc,
+                              predictors = example_vars,
+                              models_dir = "./tryfn",
+                              real_absences = NULL,
+                              buffer_type = "median",
+                              n_back = 2000000,
+                              partition_type = "bootstrap",
+                              boot_n = 1,
+                              boot_proportion = 0.7)
+
+```
+
+
     ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
 ```

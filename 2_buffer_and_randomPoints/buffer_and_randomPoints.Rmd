@@ -1,6 +1,6 @@
 ---
 title: "Testing background point generation in modleR"
-author: "Andrea Sánchez-Tapia"
+author: "Andrea Sánchez-Tapia & Sara Mortara"
 date: "`r Sys.Date()`"
 output:
   html_document: 
@@ -47,7 +47,7 @@ devtools::load_all("../../modleR")
 
 We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data. 
 
-````{r dataset}
+```{r dataset}
 ## Creating an object with species names
 especies <- names(coordenadas)[1]
 # Selecting only coordinates for the first species
@@ -357,8 +357,12 @@ no_buf <- setup_sdmdata(species_name = especies[1], # sp 1 Abarema langsdorfii
                  models_dir = "./buftest1",
                  clean_dupl = T,
                  clean_na = T)
+mx_mod <- do_any(species_name = especies[1],
+                 predictors = example_vars,
+                 models_dir = "./buftest1",
+                 algo = "maxent")
 # creating a raster object with the output of the model
-no_buf_m <- raster("./buftest1/Abarema_langsdorffii/present/partitions/")
+no_buf_m <- raster("./buftest1/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 # plotting the model
 plot(no_buf_m)
 # adding political limts to the map
@@ -372,17 +376,20 @@ Again, we use the algorithm `algo=maxent` but now we set `buffer_type=median` to
 With a median buffer:
 
 ```{r enm2, message = F, eval = F}
-# Running a maxent model for E. florida with a median buffer
-mn_buf <- do_any(species_name = especies[1], # sp 1 Abarema langsdorfii
-                 occurrences = coord1sp[, -1], # coodinates for the species
-                 predictors = example_vars, # environmental layers
+# Running a maxent model for A. langsdorfii with a median buffer
+mn_buf <- setup_sdmdata(species_name = especies[1], # sp 1 Abarema langsdorfii
+                 occurrences = coord1sp[, -1], # coordinates for the species
+                 predictors = example_vars, # example environmental data
                  models_dir = "./buftest2",
-                 algo = "maxent", # setting maxent algorithm
                  clean_dupl = T,
-                 clean_na = T, 
-                 buffer_type = "median") # setting median buffer
+                 clean_na = T,
+                 buffer_type = "median")
+mn_mod <- do_any(species_name = especies[1],
+                 predictors = example_vars,
+                 models_dir = "./buftest2",
+                 algo = "maxent")
 # creating a raster object with the output of the model
-mn_buf_m <- raster("./buftest2/Abarema langsdorfii DC./present/partitions/maxent_cut_Abarema langsdorfii DC._1_1.tif")
+mn_buf_m <- raster("./buftest2/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 # plotting the model
 plot(mn_buf_m)
 # adding political limits to map
@@ -395,8 +402,8 @@ Fitting and evaluating the models with different background samples has a differ
 
 ```{r remedy001, fig.cap="Comparing the sdmdata datasets", eval = T, echo=FALSE, fig.width=6, fig.height=3} 
 
-knitr::include_graphics("./buftest1/Abarema langsdorfii DC./present/partitions/sdmdata_Abarema langsdorfii DC..png") ;
-knitr::include_graphics("./buftest2/Abarema langsdorfii DC./present/partitions/sdmdata_Abarema langsdorfii DC..png")
+knitr::include_graphics("./buftest1/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png") ;
+knitr::include_graphics("./buftest2/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 # Effect of buffer on the background data in MaxEnt
@@ -440,9 +447,13 @@ prestrain <- sdmdata_test %>%
     filter(boot1 == 0, pa == 1) %>% select(lon, lat)
 # the test points
 ## presence test points
-prestest  <- sdmdata_test %>% filter(boot1 == 1, pa == 1) %>% select(lon, lat)
+prestest  <- sdmdata_test %>% 
+  filter(boot1 == 1, pa == 1) %>%
+  select(lon, lat)
 ## absence test points
-backtest  <- sdmdata_test %>% filter(boot1 == 1, pa == 0) %>% select(lon, lat)
+backtest  <- sdmdata_test %>% 
+  filter(boot1 == 1, pa == 0) %>%
+  select(lon, lat)
 ```
 
 We want to know if there are differences when you fit a model to the buffer environmental space, especially maxent. 
@@ -450,7 +461,7 @@ We want to know if there are differences when you fit a model to the buffer envi
 First, we crop the environmental data to our buffer 
 
 ```{r remedy002, cache = F, eval = T}
-### PAREI AQUI DE REVISAR!
+
 cropped_pred <- modleR::crop_model(example_vars, buf.med)
 plot(cropped_pred[[1]])
 ```
@@ -563,93 +574,23 @@ mx_buf$TSS
 ## Maxent with a distance buffer
 
 ```{r mxbufdist, eval = T}
-mx_dbuf <- do_any(species_name = especies[1],
-                 occurrences = coord1sp[, -1],
+mx_dbuf <- setup_sdmdata(species_name = especies[1],
+                 occurrences = coord1sp[, -1], 
                  predictors = example_vars,
                  models_dir = "./maxentdist",
-                 algo = "maxent",
-                 clean_dupl = T,
-                 clean_na = T, 
                  buffer_type = "distance",
+                 clean_dupl = T,
+                 clean_na = T,
                  dist_buf = 4)
+mx_dmod <- do_any(species_name = especies[1],
+                 predictors = example_vars,
+                 models_dir = "./maxentdist",
+                 algo = "maxent")
 
-#dbuf_mx <- raster("./maxentdist/Abarema langsdorfii DC./present/partitions/maxent_cut_Abarema langsdorfii DC._1_1.tif")
-#plot(dbuf_mx)
-#maps::map(,,add = T)
-#knitr::include_graphics("./maxentdist/Abarema langsdorfii DC./present/partitions/sdmdata_Abarema langsdorfii DC..png")
-#dbuf_mx$TSS
+dbuf_mx <- raster("./maxentdist/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
+plot(dbuf_mx)
+maps::map(,,add = T)
+knitr::include_graphics("./maxentdist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+mx_dmod$TSS
 ```
 
-#test del error 
-
-```{r remedy003, cache = F, eval = F}
-library(rgbif)
-ulex <- occ_data(scientificName = "Ulex europaeus", limit = 1000)
-maps::map()
-pts <- data.frame(lon = ulex$data$decimalLongitude, 
-                  lat = ulex$data$decimalLatitude)
-pts <- pts[complete.cases(pts),]
-head(pts)
-ulex.pt <- sp::SpatialPoints(pts)
-points(ulex$data$decimalLongitude, ulex$data$decimalLatitude)
-abline(v = 180)
-library(raster)
-w <- getData(name = "worldclim", res = 10, var = "prec")
-wmean <- mean(w)
-plot(wmean, legend = F)
-points(pts, pch = 19)
-
-# rd <- dismo::randomPoints(wmean,
-#                     n = 500,
-#                     excludep = T,
-#                     p = pts)
-buf <- create_buffer(occurrences = pts,
-                     buffer_type = "distance",
-                     dist_buf = 5,
-                     predictors = wmean)
-#poly <- raster::buffer(sp::SpatialPoints(pts),
- #                      width = 500 * 1000,
-  #                     doEdge = T,
-   #                    dissolve = TRUE)
-#plot(poly)
-plot(buf, add = T, col = "blue")
-
-buf2 <- rgeos::gBuffer(spgeom = SpatialPoints(pts), byid = F, width = 5)
-#plot(buf2)
-### abline(v=180, lwd= 2)abline(v=180, lwd= 2)
-maps::map(, , add = T)
-#plot(poly)
-plot(buf2, add = T, col = "blue")
-max(pts$lon)
-
-maps::map(, , add = T)
-#plot(poly)
-plot(buf, add = T, col = "blue")
-max(pts$lon)
-```
-
-
-## Small occurrence dataset
-
-Sometimes if the resulting dimensions of the buffer are too small 
-`randomPoints()`will have trouble to sample `n_back` absence points in it.
-
-```{r remedy004, eval = F}
-
-plot(predictor, legend = F)
-points(train_set[,2:3], col = "red", pch = 19)
-points(test_set[,2:3], col = "blue", pch = 19)
-cc <- coord1sp[,c(2,3)]
-crs(predictor)
-sdmdata_test <- setup_sdmdata(species_name = especies[1],
-                              occurrences = cc,
-                              predictors = example_vars,
-                              models_dir = "./tryfn",
-                              real_absences = NULL,
-                              buffer_type = "median",
-                              n_back = 2000000,
-                              partition_type = "bootstrap",
-                              boot_n = 1,
-                              boot_proportion = 0.7)
-
-```

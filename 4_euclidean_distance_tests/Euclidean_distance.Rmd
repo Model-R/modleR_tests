@@ -43,12 +43,12 @@ test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
 
 
 ```{r vars, message = F, eval = T}
-fit_data <- raster::stack("./env/cropped_proj.tif")
+fit_data <- raster::stack("../data/env/cropped_proj.tif")
 ```
 
 ```{r centroide}
 
-centroide1 <- modleR::euclidean(predictors =example_vars,
+centroide1 <- modleR::euclidean(predictors = example_vars,
                                 occurrences = train_set[,c(2,3)],
                                 algo = "centroid")
 centroide2 <- modleR::euclidean(predictors = fit_data,

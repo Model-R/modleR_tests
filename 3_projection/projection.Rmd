@@ -1,0 +1,203 @@
+---
+title: "Projecting models"
+author: "Andrea Sánchez Tapia"
+date: "`r Sys.Date()`"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+Here we test the function `setup_sdmdata()` and its different parametrization options. This function prepares the data to run the models with `do_any()` or `do_many()` functions. It creates an object in the workspace to be used in `do_any()` or `do_many()` and writes two csv files with metadata and sdmdata.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
+```
+
+Loading required packages.
+
+```{r load}
+library(rJava)
+library(raster)
+#library(modleR)
+library(dplyr)
+#eu estou usando uma cópia local para desenvolvimento
+devtools::load_all("../../modleR")
+library(maps)
+library(maptools)
+
+
+
+```
+
+# Selecting one species as an example
+
+We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
+
+````{r dataset}
+## Creating an object with species names
+especies <- names(coordenadas)[1]
+# Selecting only coordinates for the first species
+coord1sp <- coordenadas[[1]]
+head(coord1sp)
+dim(coord1sp)
+# Subsetting data into training and test
+ceiling(0.7 * nrow(coord1sp))
+# Making a sample of 70% of species' records
+set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
+# Creating training data set (70% of species' records)
+train_set <- coord1sp[set,]
+# Creating test data set (other 30%)
+test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
+```
+
+Now lets the check our data points. We plot the traning and test data sets with the first axis of the environmental PCA data from the object `example_vars`.
+
+```{r plotdataset}
+# selecting only the first PCA axis
+predictor <- example_vars[[1]]
+# transforming the data frame with the coordinates in a spatial object
+pts <- SpatialPoints(coord1sp[,c(2,3)])
+# ploting environmental layer
+plot(predictor, legend = F)
+points(lat ~ lon, data=coord1sp)
+```
+
+
+# Fitting and projection datasets
+
+We want to fit everything in a small area around the occurrence points (generated through a "median distance buffer") and project it to other sample rasterStacks 
+
+```{r, fig.height = 6}
+fit_data <- stack("../data/env/cropped_proj.tif")
+proj_folder <- "../data/env/proj/proj1/"
+proj_data <- list.files(proj_folder, full.names = T) %>%
+    stack() %>%
+    .[[1]]
+pts <- SpatialPoints(coord1sp[,c(2,3)])
+
+plot(!is.na(example_vars[[1]]), legend = F, add = F)
+plot(fit_data[[1]], legend = F, add = T)
+plot(proj_data[[1]], legend = F, add = T)
+points(train_set[,2:3], col = "red", pch = 19)
+points(test_set[,2:3], col = "blue", pch = 19)
+
+```
+
+
+## Model projection
+
+A simple model with no buffer and no projection: 
+
+```{r enm1, message = F, eval=F}
+# generating sdmdata
+sdm_no_proj <- setup_sdmdata(species_name = especies[1], 
+                             occurrences = coord1sp[,-1],
+                             predictors=fit_data, 
+                             models_dir="projection/fit", 
+                             clean_dupl = T, 
+                             clean_na = T)
+# running models
+no_proj <- do_many(species_name = especies[1],
+                 predictors = fit_data,
+                 models_dir = "projection/fit",
+                 bioclim = T,
+                 svmk = T)
+
+no_proj.bc <- raster("projection/fit/Abarema_langsdorffii/present/partitions/bioclim_cont_Abarema_langsdorffii_1_1.tif")
+no_proj.svmk <- raster("projection/fit/Abarema_langsdorffii/present/partitions/svmk_cont_Abarema_langsdorffii_1_1.tif")
+plot(no_proj.bc)
+maps::map(, , add = T)
+plot(no_proj.svmk)
+maps::map(, , add = T)
+```
+
+
+We project to a series of projections in the specified folder: `"./env/proj"`
+
+```{r proj, message = F, eval = T}
+## first renaming layer names from predictors to match proj files 
+names(fit_data) <- paste0("proj1_", 1:6)
+
+sdm_yes_proj <- setup_sdmdata(species_name = especies[1], 
+                             occurrences = coord1sp[,-1],
+                             predictors = fit_data, 
+                             models_dir = "projection/projtest", 
+                             clean_dupl = T, 
+                             clean_na = T,
+                             buffer_type = "median",
+                             partition_type = "bootstrap",
+                             boot_n = 3)
+
+yes_proj1 <- do_any(species_name = especies[1],
+                 predictors = fit_data,
+                 models_dir = "projection/projtest",
+                 algo = "bioclim",
+                 project_model = T,
+                 proj_data_folder = "data/env/proj/",
+                 write_png = T)
+
+yes_proj <- do_many(species_name = especies[1],
+                    predictors = fit_data,
+                    models_dir = "projection/projtest",
+                    bioclim = T,
+                    domain = T,
+                    glm = T,
+                    mahal = F,
+                    maxent = T,
+                    rf = T,
+                    svmk = T,
+                    svme = T,
+                    brt = T,
+                    project_model = T,
+                    proj_data_folder = "../data/env/proj/",
+                    write_png = T)
+```
+
+```{r list_results}
+results <- list.files("projection/projtest", pattern = ".tif$", recursive = T, full.names = T)
+length(results)#oito algoritmos, 5 projeções (present e as demais, nem vou plotar)
+```
+
+# Final model projection
+
+
+The `final_model()` function has a parameter `proj_dir` that allows it to be run using any projection. We can project the models fit to the present.
+
+```{r remedy001, eval= TRUE}
+args(final_model)
+
+final_model_present <- final_model(species_name = especies[1],
+                                   models_dir = "projection/projtest",
+                                   select_par = "TSS",
+                                   select_par_val = 0,
+                                   proj_dir = "present")
+```
+
+or the projected models, 
+
+```{r remedy002, eval= TRUE}
+final_model_proj1 <- final_model(species_name = especies[1],
+                                 models_dir = "projection/projtest",
+                                 select_par = "TSS",
+                                 select_par_val = 0,
+                                 proj_dir = "proj1")
+
+final_model_proj2 <- final_model(species_name = especies[1],
+            models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
+            proj_dir = "proj2")
+
+final_model_proj3 <- final_model(species_name = especies[1],
+            models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
+            proj_dir = "proj3")
+
+final_model_proj4 <- final_model(species_name = especies[1],
+            models_dir = "projection/projtest",
+            select_par = "TSS",
+            select_par_val = 0,
+            proj_dir = "proj4")
+```
+

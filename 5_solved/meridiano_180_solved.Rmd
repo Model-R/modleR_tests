@@ -1,0 +1,58 @@
+---
+title: "meridiano 0"
+author: 'Andrea Sánchez-Tapia, Sara Mortara, Diogo S.B: Rocha'
+date: "8/17/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Test del error 
+
+```{r remedy003, cache = F, eval = F}
+library(rgbif)
+ulex <- occ_data(scientificName = "Ulex europaeus", limit = 1000)
+maps::map()
+pts <- data.frame(lon = ulex$data$decimalLongitude, 
+                  lat = ulex$data$decimalLatitude)
+pts <- pts[complete.cases(pts),]
+head(pts)
+ulex.pt <- sp::SpatialPoints(pts)
+points(ulex$data$decimalLongitude, ulex$data$decimalLatitude)
+abline(v = 180)
+library(raster)
+w <- getData(name = "worldclim", res = 10, var = "prec")
+wmean <- mean(w)
+plot(wmean, legend = F)
+points(pts, pch = 19)
+
+# rd <- dismo::randomPoints(wmean,
+#                     n = 500,
+#                     excludep = T,
+#                     p = pts)
+buf <- create_buffer(occurrences = pts,
+                     buffer_type = "distance",
+                     dist_buf = 5,
+                     predictors = wmean)
+#poly <- raster::buffer(sp::SpatialPoints(pts),
+ #                      width = 500 * 1000,
+  #                     doEdge = T,
+   #                    dissolve = TRUE)
+#plot(poly)
+plot(buf, add = T, col = "blue")
+
+buf2 <- rgeos::gBuffer(spgeom = SpatialPoints(pts), byid = F, width = 5)
+#plot(buf2)
+### abline(v=180, lwd= 2)abline(v=180, lwd= 2)
+maps::map(, , add = T)
+#plot(poly)
+plot(buf2, add = T, col = "blue")
+max(pts$lon)
+
+maps::map(, , add = T)
+#plot(poly)
+plot(buf, add = T, col = "blue")
+max(pts$lon)
+```

@@ -3,49 +3,63 @@ title: "Testing setupsdmdata in modleR"
 author: "Andrea Sánchez-Tapia & Sara Mortara"
 date: "`r Sys.Date()`"
 output:
-  html_document: default
+  html_document:
+    number_sections: true
   pdf_document: default
+
 ---
 
-Here we test the function `setup_sdmdata` and its different parametrization options. This function prepares the data to run the models with `do_any` or `do_many` functions. It creates an object in the workspace to be used in `do_any` or `do_many` and writes two csv files with metadata and sdmdata.   
+Here we test the function `setup_sdmdata()` and its different parametrization options. This function prepares the data to run the models with `do_any()` or `do_many()` functions. It creates an object in the workspace to be used in `do_any()` or `do_many()` and writes two csv files with metadata and sdmdata.
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
 ```
 
-Loading required packages. 
+Loading required packages.
 
 ```{r load}
 library(rJava)
 library(raster)
-library(modleR)
+#library(modleR)
+library(dplyr)
+#eu estou usando uma cópia local para desenvolvimento
+devtools::load_all("../../modleR")
 library(maps)
 library(maptools)
 
-#eu estou usando uma cópia local para desenvolvimento
-#devtools::load_all("../../ModelR")
-#mas o pacote pode ser instalado assim: 
-#devtools::install_github("model-r/modelr_pkg", build_vignettes = TRUE, ref = "petropolis")
+
 
 ```
 
 # Selecting one species as an example
 
-We select only one species from the example data in the package. 
+We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
 
-```{r dataset}
-# creating a vector with species names
-especies <- unique(coordenadas$sp)
-# creating a vector with coordinates from species #1
-coord1sp <- dplyr::filter(coordenadas, sp == especies[1])
+````{r dataset}
+## Creating an object with species names
+especies <- names(coordenadas)[1]
+# Selecting only coordinates for the first species
+coord1sp <- coordenadas[[1]]
 head(coord1sp)
-dim(coord1sp) # 341 records
+dim(coord1sp)
+# Subsetting data into training and test
+ceiling(0.7 * nrow(coord1sp))
+# Making a sample of 70% of species' records
+set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
+# Creating training data set (70% of species' records)
+train_set <- coord1sp[set,]
+# Creating test data set (other 30%)
+test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
 ```
 
-Plotting records of `r especies[1]`
+Now lets the check our data points. We plot the traning and test data sets with the first axis of the environmental PCA data from the object `example_vars`.
 
-```{r}
+```{r plotdataset}
+# selecting only the first PCA axis
 predictor <- example_vars[[1]]
+# transforming the data frame with the coordinates in a spatial object
+pts <- SpatialPoints(coord1sp[,c(2,3)])
+# ploting environmental layer
 plot(predictor, legend = F)
 points(lat ~ lon, data=coord1sp)
 ```
@@ -53,7 +67,7 @@ points(lat ~ lon, data=coord1sp)
 
 # Function arguments
 
-Lets explore different arguments in `setup_sdmdata` function. 
+Lets explore different arguments in `setup_sdmdata()` function.
 
 ```{r args, echo = F}
 args(setup_sdmdata)
@@ -61,11 +75,11 @@ args(setup_sdmdata)
 
 ## Default options
 
-First, running with default options. Pseudo-absences are generated in the entire area of the predictor variables and data is partitioned following bootstrap procedures. 
+First, running with default options. Pseudo-absences are generated in the entire area of the predictor variables and data is partitioned following bootstrap procedures.
 
 ```{r }
 a <- setup_sdmdata(species_name = especies[1], # species #01
-              occurrences = coord1sp[,-1], 
+              occurrences = coord1sp[,-1],
               predictors = example_vars,
               models_dir = "./setupsdmdata/setupsdmdatam",
               real_absences = NULL,
@@ -75,7 +89,7 @@ a <- setup_sdmdata(species_name = especies[1], # species #01
               seed = 512)
 ```
 
-Exploring the output object from `setup_sdmdata`. 
+Exploring the output object from `setup_sdmdata()`.
 
 ```{r remedy002}
 head(a)
@@ -83,22 +97,22 @@ head(a)
 
 
 ```{r remedy003}
-knitr::include_graphics("./setupsdmdata/setupsdmdatam/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatam/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 
-### partitioning data with crossvalidation
+### Partitioning data with crossvalidation
 
-For crossvalidation we need to specify the number of runs with `cv_n` and partitions with `cv_partitions`. 
+For crossvalidation we need to specify the number of runs with `cv_n` and partitions with `cv_partitions`.
 
 ```{r remedy001}
 aa <- setup_sdmdata(species_name = especies[1], # species #01
-              occurrences = coord1sp[,-1], 
+              occurrences = coord1sp[,-1],
               predictors = example_vars,
               models_dir = "./setupsdmdata/setupsdmdatam_cross",
               partition_type = "crossvalidation",
-              cv_n=1, 
-              cv_partitions=5,
+              cv_n = 1,
+              cv_partitions = 5,
               real_absences = NULL,
               buffer_type = NULL,
               clean_dupl = T,
@@ -116,21 +130,21 @@ head(aa)
 
 ## Exploring different generations of pseudo-absences with `buffer_type`
 
-### mean buffer
+### Mean buffer
 
 Buffer for pseudo-absence generation based on mean distance between occurrence points.
 
 ```{r remedy0031}
 
 b <- setup_sdmdata(species_name = especies[1],
-              occurrences = coord1sp[,-1],
-              predictors = example_vars,
-              models_dir = "./setupsdmdata/setupsdmdatan",
-              real_absences = NULL,
-              buffer_type = "mean",
-              clean_dupl = T,
-              clean_nas = T,
-              seed = 512)
+                   occurrences = coord1sp[, -1],
+                   predictors = example_vars,
+                   models_dir = "./setupsdmdata/setupsdmdatan",
+                   real_absences = NULL,
+                   buffer_type = "mean",
+                   clean_dupl = T,
+                   clean_nas = T,
+                   seed = 512)
 ```
 
 
@@ -139,11 +153,11 @@ head(b)
 ```
 
 ```{r remedy0061}
-knitr::include_graphics("./setupsdmdata/setupsdmdatan/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatan/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 
-### buffer median
+### Buffer median
 
 Buffer for pseudo-absence generation based on median of distance between occurrence points.
 
@@ -165,7 +179,7 @@ head(c)
 ```
 
 ```{r remedy009}
-knitr::include_graphics("./setupsdmdata/setupsdmdatap/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatap/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ### buffer max
@@ -190,7 +204,7 @@ head(d)
 ```
 
 ```{r remedy0092}
-knitr::include_graphics("./setupsdmdata/setupsdmdatax/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatax/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ### buffer dist
@@ -216,12 +230,16 @@ head(e)
 ```
 
 ```{r remedy00922}
-knitr::include_graphics("./setupsdmdata/setupsdmdataxd/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+knitr::include_graphics("./setupsdmdata/setupsdmdataxd/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
-### user defined buffer: the user provide a shapefile. Maptools package to read the ".shp" file
+### user defined buffer: the user provides a shapefile. Maptools package to read the ".shp" file
 
-myshapefile <- readShapePoly("data/myshapefile.shp")
+```{r remedy016}
+
+myshapefile <- readShapePoly("../data/myshapefile.shp")
+
+```
 
 ```{r remedyxxx}
 f <- setup_sdmdata(species_name = especies[1],
@@ -242,6 +260,6 @@ head(f)
 ```
 
 ```{r remedyzzz}
-knitr::include_graphics("./setupsdmdata/setupsdmdataub/Eugenia florida DC./present/partitions/sdmdata_Eugenia florida DC..png")
+knitr::include_graphics("./setupsdmdata/setupsdmdataub/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
