@@ -6,9 +6,11 @@
 .Rhistory
 
 # ignore output_folders
-setupsdmdata/
-projection/
+1_setupsdmdata_tests/setupsdmdata
+2_buffer_and_randomPoints/buffer_res
+3_projection/projection
+3_projection/projection_files
 
 # ignore html outputs
-.html
+*.html
 

@@ -88,7 +88,7 @@ points(test_set[,2:3], col = "blue", pch = 19)
 
 A simple model with no buffer and no projection: 
 
-```{r enm1, message = F, eval=F}
+```{r enm1, message = F, eval = TRUE}
 # generating sdmdata
 sdm_no_proj <- setup_sdmdata(species_name = especies[1], 
                              occurrences = coord1sp[,-1],
@@ -114,7 +114,7 @@ maps::map(, , add = T)
 
 We project to a series of projections in the specified folder: `"./env/proj"`
 
-```{r proj, message = F, eval = T}
+```{r proj, message = F, eval = TRUE}
 ## first renaming layer names from predictors to match proj files 
 names(fit_data) <- paste0("proj1_", 1:6)
 
@@ -163,41 +163,41 @@ length(results)#oito algoritmos, 5 projeções (present e as demais, nem vou plo
 
 The `final_model()` function has a parameter `proj_dir` that allows it to be run using any projection. We can project the models fit to the present.
 
-```{r remedy001, eval= TRUE}
+```{r remedy001, eval = TRUE}
 args(final_model)
 
 final_model_present <- final_model(species_name = especies[1],
                                    models_dir = "projection/projtest",
                                    select_par = "TSS",
                                    select_par_val = 0,
-                                   proj_dir = "present")
+                                   proj_dir = "present", overwrite = TRUE)
 ```
 
 or the projected models, 
 
-```{r remedy002, eval= TRUE}
+```{r remedy002, eval = TRUE}
 final_model_proj1 <- final_model(species_name = especies[1],
                                  models_dir = "projection/projtest",
                                  select_par = "TSS",
                                  select_par_val = 0,
-                                 proj_dir = "proj1")
+                                 proj_dir = "proj1", overwrite = TRUE)
 
 final_model_proj2 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
             select_par = "TSS",
             select_par_val = 0,
-            proj_dir = "proj2")
+            proj_dir = "proj2", overwrite = TRUE)
 
 final_model_proj3 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
             select_par = "TSS",
             select_par_val = 0,
-            proj_dir = "proj3")
+            proj_dir = "proj3", overwrite = TRUE)
 
 final_model_proj4 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
             select_par = "TSS",
             select_par_val = 0,
-            proj_dir = "proj4")
+            proj_dir = "proj4", overwrite = TRUE)
 ```
 
