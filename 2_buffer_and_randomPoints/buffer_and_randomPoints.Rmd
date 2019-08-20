@@ -109,7 +109,7 @@ buf.p <- dismo::randomPoints(buf,
                     p = pts)
 # plotting environmental layer with background values
 ## environmental layer
-plot(predictor, legend = F, main = "nobuffer createbuffer")
+plot(predictor, legend = F, main = "nobuffer create_buffer")
 ## create_buffer object
 plot(buf, add = T, legend = F, col = scales::alpha("grey", 0.5), border = "black")
 ## background values
@@ -242,8 +242,7 @@ Here we specify `buffer_type = NULL` to perform background point generation.
 a <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./setupsdmdatanul",
-              real_absences = NULL,
+              models_dir = "./buffer_res/setupsdmdatanul",
               buffer_type = NULL, # no buffer
               clean_dupl = T,
               clean_nas = T,
@@ -251,7 +250,7 @@ a <- setup_sdmdata(species_name = especies[1],
 # checking the output
 head(a)
 # plotting background point generation
-knitr::include_graphics("./setupsdmdatanul/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/setupsdmdatanul/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ## `setup_sdmdata` with maximum distance
@@ -263,7 +262,7 @@ Here we specify `buffer_type = max` to use maximum distance between occurrence p
 b <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./setupsdmdatamax",
+              models_dir = "./buffer_res/setupsdmdatamax",
               real_absences = NULL,
               buffer_type = "max", # maximum distance between points
               clean_dupl = T,
@@ -272,7 +271,7 @@ b <- setup_sdmdata(species_name = especies[1],
 # chacking the output
 head(b)
 # plotting backgrounf point generation
-knitr::include_graphics("./setupsdmdatamax/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/setupsdmdatamax/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ## `setup_sdmdata` with mean distance
@@ -284,8 +283,7 @@ Here we specify `buffer_type = mean` to use maximum distance between occurrence 
 c <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./setupsdmdatamean",
-              real_absences = NULL,
+              models_dir = "./buffer_res/setupsdmdatamean",
               buffer_type = "mean", # setting mean distance between occurrence points
               clean_dupl = T,
               clean_nas = T,
@@ -293,7 +291,7 @@ c <- setup_sdmdata(species_name = especies[1],
 # checking the output
 head(c)
 # plotting background point generation
-knitr::include_graphics("./setupsdmdatamean/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/setupsdmdatamean/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ## `setup_sdmdata` with median of distance between occurrence points
@@ -305,8 +303,7 @@ Here we specify `buffer_type = median` to use median of distance between occurre
 d <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./setupsdmdatamed",
-              real_absences = NULL,
+              models_dir = "./buffer_res/setupsdmdatamed",
               buffer_type = "median", # median of distance between occcurrence points
               clean_dupl = T,
               clean_nas = T,
@@ -314,20 +311,19 @@ d <- setup_sdmdata(species_name = especies[1],
 # checking the output
 head(d)
 # plotting background point generation
-knitr::include_graphics("./setupsdmdatamed/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/setupsdmdatamed/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ## `setup_sdmdata` with a specific distance between occurrence points
 
-Here we specify `buffer_type = distance` and `dist_buf = 5` to use 5 km buffer from each occurrence point to perform background point generation. Note that it is mandatory to set `dist_buf` when using a distance buffer. 
+Here we specify `buffer_type = distance` and `dist_buf = 5` to use 5 degree buffer from each occurrence point to perform background point generation. Note that it is mandatory to set `dist_buf` when using a distance buffer. 
 
 ```{r sdmdatadist, eval = T}
 # background point generation inside setup_sdmdata with a specific distance
 e <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./setupsdmdatadist",
-              real_absences = NULL,
+              models_dir = "./buffer_res/setupsdmdatadist",
               buffer_type = "distance", # specific distance
               dist_buf = 5, # must set dist_buf!
               clean_dupl = T,
@@ -336,7 +332,7 @@ e <- setup_sdmdata(species_name = especies[1],
 # checking the output
 head(e)
 # plotting the background point generation
-knitr::include_graphics("./setupsdmdatadist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/setupsdmdatadist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 # Effect of different types of buffer on model projection and evaluation
@@ -354,15 +350,15 @@ A simple model with no buffer:
 no_buf <- setup_sdmdata(species_name = especies[1], # sp 1 Abarema langsdorfii
                  occurrences = coord1sp[, -1], # coordinates for the species
                  predictors = example_vars, # example environmental data
-                 models_dir = "./buftest1",
+                 models_dir = "./buffer_res/buftest1",
                  clean_dupl = T,
                  clean_na = T)
 mx_mod <- do_any(species_name = especies[1],
                  predictors = example_vars,
-                 models_dir = "./buftest1",
+                 models_dir = "./buffer_res/buftest1",
                  algo = "maxent")
 # creating a raster object with the output of the model
-no_buf_m <- raster("./buftest1/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
+no_buf_m <- raster("./buffer_res/buftest1/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 # plotting the model
 plot(no_buf_m)
 # adding political limts to the map
@@ -375,21 +371,21 @@ Again, we use the algorithm `algo=maxent` but now we set `buffer_type=median` to
 
 With a median buffer:
 
-```{r enm2, message = F, eval = F}
+```{r enm2, message = F, eval = T}
 # Running a maxent model for A. langsdorfii with a median buffer
 mn_buf <- setup_sdmdata(species_name = especies[1], # sp 1 Abarema langsdorfii
                  occurrences = coord1sp[, -1], # coordinates for the species
                  predictors = example_vars, # example environmental data
-                 models_dir = "./buftest2",
+                 models_dir = "./buffer_res/buftest2",
                  clean_dupl = T,
                  clean_na = T,
                  buffer_type = "median")
 mn_mod <- do_any(species_name = especies[1],
                  predictors = example_vars,
-                 models_dir = "./buftest2",
+                 models_dir = "./buffer_res/buftest2",
                  algo = "maxent")
 # creating a raster object with the output of the model
-mn_buf_m <- raster("./buftest2/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
+mn_buf_m <- raster("./buffer_res/buftest2/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 # plotting the model
 plot(mn_buf_m)
 # adding political limits to map
@@ -402,8 +398,8 @@ Fitting and evaluating the models with different background samples has a differ
 
 ```{r remedy001, fig.cap="Comparing the sdmdata datasets", eval = T, echo=FALSE, fig.width=6, fig.height=3} 
 
-knitr::include_graphics("./buftest1/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png") ;
-knitr::include_graphics("./buftest2/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/buftest1/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png") ;
+knitr::include_graphics("./buffer_res/buftest2/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 # Effect of buffer on the background data in MaxEnt
@@ -415,7 +411,7 @@ Let's create a dataset for training and test using `setup_sdmdata`:
 sdmdata_test <- setup_sdmdata(species_name = especies[1],
                               occurrences = coord1sp,
                               predictors = example_vars,
-                              models_dir = "./sdmdatatestmaxent",
+                              models_dir = "./buffer_res/sdmdatatestmaxent",
                               real_absences = NULL,
                               buffer_type = "median",
                               n_back = 500,
@@ -434,26 +430,27 @@ head(sdmdata_test)
 
 The column `pa` in `sdmdata_test` corresponds to presences and absences and `0` in `boot1` corresponds to the training data set.
 
-```{r, eval = F}
+```{r, eval = T}
 # counting presences and absences in training and test data sets
 count(sdmdata_test, pa, boot1)
 ```
 
 Let's create three objects: one for the training data set named `prestrain` and two for the test data set being one for presences (`prestest`) and other for absences (`backtest`).
 
-```{r, eval = F}
+```{r, eval = T}
 # the training points
 prestrain <- sdmdata_test %>%
-    filter(boot1 == 0, pa == 1) %>% select(lon, lat)
+    filter(boot1 == 0, pa == 1) %>%
+  dplyr::select(lon, lat)
 # the test points
 ## presence test points
 prestest  <- sdmdata_test %>% 
   filter(boot1 == 1, pa == 1) %>%
-  select(lon, lat)
+  dplyr::select(lon, lat)
 ## absence test points
 backtest  <- sdmdata_test %>% 
   filter(boot1 == 1, pa == 0) %>%
-  select(lon, lat)
+  dplyr::select(lon, lat)
 ```
 
 We want to know if there are differences when you fit a model to the buffer environmental space, especially maxent. 
@@ -468,19 +465,19 @@ plot(cropped_pred[[1]])
 
 #### For Bioclim, Mahal, domain, it doesn't make a difference
 
-```{r bioclim, eval = F}
+```{r bioclim, eval = T}
 b  <- dismo::bioclim(example_vars, prestrain)
 b2 <- dismo::bioclim(cropped_pred, prestrain)
 identical(b,b2)
 ```
 
-```{r mahal, eval = F}
+```{r mahal, eval = T}
 c  <- dismo::mahal(example_vars, prestrain)
 c2 <- dismo::mahal(cropped_pred, prestrain)
 identical(c,c2)
 ```
 
-```{r dom, eval = F}
+```{r dom, eval = T}
 dm  <- dismo::domain(example_vars, prestrain)
 dm2 <- dismo::domain(cropped_pred, prestrain)
 identical(dm, dm2)
@@ -489,7 +486,7 @@ identical(dm, dm2)
 
 #### But for Maxent, as an algorithm that uses the background data, it does
 
-```{r max, eval = F}
+```{r max, eval = T}
 mx  <- dismo::maxent(example_vars, prestrain)
 mx2 <- dismo::maxent(cropped_pred, prestrain)
 identical(mx, mx2)
@@ -497,7 +494,7 @@ identical(mx, mx2)
 
 Let's project these models
 
-```{r proj, fig.height= 8, eval = F}
+```{r proj, fig.height= 8, eval = T}
 mod_cont1 <- dismo::predict(example_vars, mx)
 mod_cont2 <- dismo::predict(example_vars, mx2)
 par(mfrow = c(2, 1), mar = c(2, 2, 2, 2))
@@ -509,7 +506,7 @@ The model with the largest background tends to overfit to the known distribution
 
 Let's evaluate these models
 
-```{r, eval = F}
+```{r, eval = T}
 library(dismo)
 
 eval_mx  <- dismo::evaluate(p = prestest,
@@ -534,40 +531,42 @@ Let's compare this as implemented in the package
 
 ## Maxent with no buffer
 
-```{r, eval = F}
-
+```{r, eval = T}
+mx <- setup_sdmdata(species_name = especies[1],
+                    occurrences = coord1sp[, -1],
+                    predictors = example_vars,
+                    models_dir = "./buffer_res/maxenttest"
+                    )
 no_buf <- do_any(species_name = especies[1],
-                 occurrences = coord1sp[, -1],
                  predictors = example_vars,
-                 models_dir = "./maxenttest",
-                 algo = "maxent",
-                 clean_dupl = T,
-                 clean_na = T,
-                 buffer_type = NULL)
+                 models_dir = "./buffer_res/maxenttest",
+                 algo = "maxent")
 
-no_buf_m <- raster("./maxenttest//Abarema langsdorfii DC./present/partitions/maxent_cut_Abarema langsdorfii DC._1_1.tif")
+no_buf_m <- raster("./buffer_res/maxenttest/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 plot(no_buf_m)
 maps::map(,,add = T)
-knitr::include_graphics("./maxenttest/Abarema langsdorfii DC./present/partitions/sdmdata_Abarema langsdorfii DC..png")
+knitr::include_graphics("./buffer_res/maxenttest/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 no_buf$TSS
 ```
 
 ## Maxent with a median buffer
 
-```{r mxbufmedian, eval = F}
+```{r mxbufmedian, eval = T}
+md_mx <- setup_sdmdata(species_name = especies[1],
+                    occurrences = coord1sp[, -1],
+                    predictors = example_vars,
+                    models_dir = "./buffer_res/maxentmax",
+                    buffer_type = "median"
+                    )
 mx_buf <- do_any(species_name = especies[1],
-                 occurrences = coord1sp[, -1],
                  predictors = example_vars,
-                 models_dir = "./maxentmax",
-                 algo = "maxent",
-                 clean_dupl = T,
-                 clean_na = T, 
-                 buffer_type = "median")
+                 models_dir = "./buffer_res/maxentmax",
+                 algo = "maxent")
 
-no_buf_m <- raster("./maxentmax/Abarema langsdorfii DC./present/partitions/maxent_cut_Abarema langsdorfii DC._1_1.tif")
+no_buf_m <- raster("./buffer_res/maxentmax/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 plot(no_buf_m)
 maps::map(,,add = T)
-knitr::include_graphics("./maxentmax/Abarema langsdorfii DC./present/partitions/sdmdata_Abarema langsdorfii DC..png")
+knitr::include_graphics("./buffer_res/maxentmax/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 mx_buf$TSS
 ```
 
@@ -577,20 +576,20 @@ mx_buf$TSS
 mx_dbuf <- setup_sdmdata(species_name = especies[1],
                  occurrences = coord1sp[, -1], 
                  predictors = example_vars,
-                 models_dir = "./maxentdist",
+                 models_dir = "./buffer_res/maxentdist",
                  buffer_type = "distance",
                  clean_dupl = T,
                  clean_na = T,
                  dist_buf = 4)
 mx_dmod <- do_any(species_name = especies[1],
                  predictors = example_vars,
-                 models_dir = "./maxentdist",
+                 models_dir = "./buffer_res/maxentdist",
                  algo = "maxent")
 
-dbuf_mx <- raster("./maxentdist/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
+dbuf_mx <- raster("./buffer_res/maxentdist/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
 plot(dbuf_mx)
 maps::map(,,add = T)
-knitr::include_graphics("./maxentdist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
+knitr::include_graphics("./buffer_res/maxentdist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 mx_dmod$TSS
 ```
 
