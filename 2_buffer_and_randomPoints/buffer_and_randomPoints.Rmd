@@ -593,3 +593,53 @@ knitr::include_graphics("./buffer_res/maxentdist/Abarema_langsdorffii/present/da
 mx_dmod$TSS
 ```
 
+
+# MINDIST! QUAL É - tá funcionando
+
+
+```{r MINDIST, eval = F}
+mindist <- setup_sdmdata(species_name = especies[1],
+                 occurrences = coord1sp[, -1], 
+                 predictors = example_vars,
+                 models_dir = "./buffer_res/mindist",
+                 buffer_type = "distance",
+                 dist_min = 3,
+                 clean_dupl = T,
+                 clean_na = T,
+                 dist_buf = 7)
+mx_dmod <- do_any(species_name = especies[1],
+                 predictors = example_vars,
+                 models_dir = "./buffer_res/mindist",
+                 algo = "maxent")
+
+dbuf_mx <- raster("./buffer_res/mindist/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
+plot(dbuf_mx)
+maps::map(,,add = T)
+knitr::include_graphics("./buffer_res/mindist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png",dpi = 150)
+mx_dmod$TSS
+```
+
+#user e mindist
+```{r user}
+myshapefile <- maptools::readShapePoly("../data/myshapefile.shp")
+user <- setup_sdmdata(species_name = especies[1],
+                 occurrences = coord1sp[, -1], 
+                 predictors = example_vars,
+                 models_dir = "./buffer_res/usrshp",
+                 buffer_type = "user",
+                 buffer_shape = myshapefile,
+                 dist_min = 3,
+                 clean_dupl = T,
+                 clean_na = T)
+usr <- do_any(species_name = especies[1],
+                 predictors = example_vars,
+                 models_dir = "./buffer_res/usrshp",
+                 algo = "maxent")
+
+hknitr::include_graphics("./buffer_res/usrshp/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png",dpi = 150)
+
+usrmod <- raster("./buffer_res/usrshp/Abarema_langsdorffii/present/partitions/maxent_cont_Abarema_langsdorffii_1_1.tif")
+plot(usrmod)
+maps::map(,,add = T)
+usr$TSS
+```
