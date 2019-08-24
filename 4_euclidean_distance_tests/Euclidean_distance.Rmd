@@ -130,36 +130,65 @@ plot(sort(values(centroide1)), sort(values(mahal1p)))
 
 
 ```{r}
-centroide1 <- modleR::euclidean(predictors = fit_data,
+centroide_original <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
                                 algo = "centroid")
-mindist1 <- modleR::euclidean(predictors = fit_data,
+mindist_original <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
                                 algo = "mindist")
-mahal1 <- dismo::mahal(x = fit_data,
+mahal_original <- dismo::mahal(x = fit_data,
                        p = train_set[,c(2,3)])
-mahal1p <- predict(mahal1, fit_data)
+mahalp <- predict(mahal_original, fit_data)
 par(mfrow = c(1, 3))
-plot(mahal1p)
-plot(centroide1)
-plot(mindist1)
+plot(mahalp)
+plot(centroide_original)
+plot(mindist_original)
 ```
 
-# centroide varia menos abruptamente
-```{r}
-par(mfrow = c(1, 3))
-plot(sort(values(mahal1p)))
-plot(sort(values(centroide1)))
-plot(sort(values(mindist1)))
-```
+
 
 
 ```{r}
 library(GGally)
-df <- data.frame(cen = values(centroide1), 
-                 min = values(mindist1), 
-                 mah = values(mahal1p))
+df <- data.frame(cen = values(centroide_original), 
+                 min = values(mindist_original), 
+                 mah = values(mahalp))
 ggpairs(df)
+
+
+```
+
+# cómo se distribuyen esos dados??
+
+```{r}
+Fn_cen <- ecdf(df$cen)
+excen <- extract(centroide_original, coord1sp[,c(2,3)])
+Fn_cen(min(excen))
+#el LPT está en el quantil 42. 
+Fn_min <- ecdf(df$min)
+exmin <- extract(mindist_original, coord1sp[,c(2,3)])
+Fn_min(min(exmin))
+#el LPT de mindist está en el quantil 60. 
+Fn_mah <- ecdf(df$mah)
+exmah <- extract(mahalp, coord1sp[,c(2,3)])
+Fn_mah(min(exmah))
+#el LPT de mahal está en el quantil 67. la mayor parte de la distancia ni puta idea si sirve 
+```
+
+# centroide varia menos abruptamente
+#o LPT fica em lugares diferentes
+
+```{r}
+par(mfrow = c(1, 3))
+plot(sort(df$cen))
+abline(v = sum(!is.na(df$cen))*Fn_cen(min(excen)), col = "red")
+
+plot(sort(df$mah))
+abline(v = sum(!is.na(df$mah))*Fn_mah(min(exmah)), col = "red")
+
+plot(sort(df$min))
+abline(v = sum(!is.na(df$min))*Fn_min(min(exmin)), col = "red")
+```
 
 ```
 
@@ -168,20 +197,34 @@ ggpairs(df)
 ```{r}
 par(mfrow = c(1,3))
 meds <- apply(df, 2, median, na.rm = T)
-plot(centroide1 > meds["cen"])
-plot(mindist1 > meds["min"])
-plot(mahal1p > meds["mah"])
+q <- quantile(df$cen, 0.8, na.rm = T, names = F)
+
+quant <- apply(df, 2, quantile, na.rm = T, probs = 0.8)
+plot(centroide_original > meds["cen"])
+plot(mindist_original > meds["min"])
+plot(mahalp > meds["mah"])
+
+centroide1 <- centroide_original
+mindist1 <- mindist_original
+mahalp1 <- mahalp
 
 centroide1[centroide1 <= meds["cen"]] <- meds["cen"]
 plot(centroide1)
 mindist1[mindist1 <= meds["min"]] <- meds["min"]
 plot(mindist1)
-mahal1p[mahal1p <= meds["mah"]] <- meds["mah"]
-plot(mahal1p)
+mahalp1[mahalp1 <= meds["mah"]] <- meds["mah"]
+plot(mahalp1)
 
 
 ```
 
 e se comparássemos isto a buffer?
 
+```{r}
+par(mfrow = c(1, 3))
+plot(centroide_original > quant["cen"])
+plot(mindist_original > quant["min"])
+plot(mahalp1 > quant["mah"])
+
+```
 
