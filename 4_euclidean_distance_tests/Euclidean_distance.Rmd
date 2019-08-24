@@ -76,7 +76,7 @@ points(train_set[,c(2,3)])
 ```
 
 
-```{r cut}
+```{r cut, eval = F}
 a <- rescale_layer(mindist1)
 plot(a)
 a > 0.8
@@ -89,14 +89,14 @@ maps::map(,,,add = T)
 ```
 
 
-```{r}
+```{r, eval = F}
 setup <- setup_sdmdata(species_name = especies[1],
                        occurrences = coord1sp[, -1],
                        predictors = fit_data,
                        models_dir = "./eucl")
 ```
+```{r, eval = F}
 
-```{r}
 centroid_no_proj <- do_any(species_name = especies[1],
                            predictors = fit_data,
                            write_png = T,
@@ -110,6 +110,78 @@ mindist_no_proj <- do_any(species_name = especies[1],
 ```
 
 
-## Model projection
+## Compara a forma dos valores com domain e mahal
+
+```{r}
+centroide1 <- modleR::euclidean(predictors = example_vars,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "centroid")
+mahal1 <- dismo::mahal(x = example_vars,
+                       p = train_set[,c(2,3)])
+mahal1p <- predict(mahal1, example_vars)
+par(mfrow = c(1, 2))
+plot(mahal1p)
+plot(centroide1)
+
+plot(sort(values(centroide1)))
+plot(sort(values(mahal1p)))
+plot(sort(values(centroide1)), sort(values(mahal1p)))
+```
+
+
+```{r}
+centroide1 <- modleR::euclidean(predictors = fit_data,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "centroid")
+mindist1 <- modleR::euclidean(predictors = fit_data,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "mindist")
+mahal1 <- dismo::mahal(x = fit_data,
+                       p = train_set[,c(2,3)])
+mahal1p <- predict(mahal1, fit_data)
+par(mfrow = c(1, 3))
+plot(mahal1p)
+plot(centroide1)
+plot(mindist1)
+```
+
+# centroide varia menos abruptamente
+```{r}
+par(mfrow = c(1, 3))
+plot(sort(values(mahal1p)))
+plot(sort(values(centroide1)))
+plot(sort(values(mindist1)))
+```
+
+
+```{r}
+library(GGally)
+df <- data.frame(cen = values(centroide1), 
+                 min = values(mindist1), 
+                 mah = values(mahal1p))
+ggpairs(df)
+
+```
+
+# se eu cortar os três pela mediana
+
+```{r}
+par(mfrow = c(1,3))
+meds <- apply(df, 2, median, na.rm = T)
+plot(centroide1 > meds["cen"])
+plot(mindist1 > meds["min"])
+plot(mahal1p > meds["mah"])
+
+centroide1[centroide1 <= meds["cen"]] <- meds["cen"]
+plot(centroide1)
+mindist1[mindist1 <= meds["min"]] <- meds["min"]
+plot(mindist1)
+mahal1p[mahal1p <= meds["mah"]] <- meds["mah"]
+plot(mahal1p)
+
+
+```
+
+e se comparássemos isto a buffer?
 
 
