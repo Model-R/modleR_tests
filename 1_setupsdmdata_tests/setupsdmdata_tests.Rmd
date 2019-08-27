@@ -20,21 +20,26 @@ Loading required packages.
 ```{r load}
 library(rJava)
 library(raster)
-library(modleR)
+#library(modleR)
 library(dplyr)
-#eu estou usando uma cópia local para desenvolvimento #devtools::load_all("../../modleR")
+#eu estou usando uma cópia local para desenvolvimento
+devtools::load_all("../../modleR")
 library(maps)
 library(maptools)
+
+
+
 ```
 
 # Selecting one species as an example
 
-We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Eugenia florida DC.* and create one training set (70% of the data) and one test set (30% of the data) for the data.
+We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
+
 ````{r dataset}
 ## Creating an object with species names
 especies <- names(coordenadas)[1]
 # Selecting only coordinates for the first species
-coord1sp <- coordenadas[coordenadas$sp == "Eugenia florida DC.",]
+coord1sp <- coordenadas[[1]]
 head(coord1sp)
 dim(coord1sp)
 # Subsetting data into training and test
@@ -73,10 +78,10 @@ args(setup_sdmdata)
 First, running with default options. Pseudo-absences are generated in the entire area of the predictor variables and data is partitioned following bootstrap procedures.
 
 ```{r }
-a <- setup_sdmdata(species_name = unique (coord1sp[1]), # species #01
+a <- setup_sdmdata(species_name = especies[1], # species #01
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./1_setupsdmdata_tests/setupsdmdatam",
+              models_dir = "./setupsdmdata/setupsdmdatam",
               real_absences = NULL,
               buffer_type = NULL,
               clean_dupl = T,
@@ -92,7 +97,7 @@ head(a)
 
 
 ```{r remedy003}
-knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatam/Eugenia_florida/present/data_setup/sdmdata_Eugenia_florida.png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatam/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 
@@ -101,10 +106,10 @@ knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatam/Eugenia_florida/pr
 For crossvalidation we need to specify the number of runs with `cv_n` and partitions with `cv_partitions`.
 
 ```{r remedy001}
-aa <- setup_sdmdata(species_name = unique(coord1sp[1]), # species #01
+aa <- setup_sdmdata(species_name = especies[1], # species #01
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./1_setupsdmdata_tests/setupsdmdatam_cross",
+              models_dir = "./setupsdmdata/setupsdmdatam_cross",
               partition_type = "crossvalidation",
               cv_n = 1,
               cv_partitions = 5,
@@ -131,10 +136,10 @@ Buffer for pseudo-absence generation based on mean distance between occurrence p
 
 ```{r remedy0031}
 
-b <- setup_sdmdata(species_name = unique (coord1sp[1]),
+b <- setup_sdmdata(species_name = especies[1],
                    occurrences = coord1sp[, -1],
                    predictors = example_vars,
-                   models_dir = "./1_setupsdmdata_tests/setupsdmdatan",
+                   models_dir = "./setupsdmdata/setupsdmdatan",
                    real_absences = NULL,
                    buffer_type = "mean",
                    clean_dupl = T,
@@ -148,7 +153,7 @@ head(b)
 ```
 
 ```{r remedy0061}
-knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatan/Eugenia_florida/present/data_setup/sdmdata_Eugenia_florida.png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatan/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 
@@ -157,10 +162,10 @@ knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatan/Eugenia_florida/pr
 Buffer for pseudo-absence generation based on median of distance between occurrence points.
 
 ```{r remedy005}
-c <- setup_sdmdata(species_name = unique (coord1sp[1]),
+c <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./1_setupsdmdata_tests/setupsdmdatap",
+              models_dir = "./setupsdmdata/setupsdmdatap",
               real_absences = NULL,
               buffer_type = "median",
               clean_dupl = T,
@@ -174,7 +179,7 @@ head(c)
 ```
 
 ```{r remedy009}
-knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatap/Eugenia_florida/present/data_setup/sdmdata_Eugenia_florida.png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatap/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ### buffer max
@@ -182,10 +187,10 @@ knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatap/Eugenia_florida/pr
 Buffer for pseudo-absence generation based on maximum distance between occurrence points.
 
 ```{r remedy0051}
-d <- setup_sdmdata(species_name = unique(coord1sp[1]),
+d <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./1_setupsdmdata_tests/setupsdmdatax",
+              models_dir = "./setupsdmdata/setupsdmdatax",
               real_absences = NULL,
               buffer_type = "max",
               clean_dupl = T,
@@ -199,7 +204,7 @@ head(d)
 ```
 
 ```{r remedy0092}
-knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatax/Eugenia_florida/present/data_setup/sdmdata_Eugenia_florida.png")
+knitr::include_graphics("./setupsdmdata/setupsdmdatax/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ### buffer dist
@@ -207,10 +212,10 @@ knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdatax/Eugenia_florida/pr
 Buffer for pseudo-absence generation based on specific distance between occurrence points. In this case `dist_buf` argument must be specified.
 
 ```{r remedy00512}
-e <- setup_sdmdata(species_name = unique(coord1sp[1]) ,
+e <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./1_setupsdmdata_tests/setupsdmdataxd",
+              models_dir = "./setupsdmdata/setupsdmdataxd",
               real_absences = NULL,
               buffer_type = "distance",
               dist_buf = 4,
@@ -225,7 +230,7 @@ head(e)
 ```
 
 ```{r remedy00922}
-knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdataxd/Eugenia_florida/present/data_setup/sdmdata_Eugenia_florida.png")
+knitr::include_graphics("./setupsdmdata/setupsdmdataxd/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
 ### user defined buffer: the user provides a shapefile. Maptools package to read the ".shp" file
@@ -237,10 +242,10 @@ myshapefile <- readShapePoly("../data/myshapefile.shp")
 ```
 
 ```{r remedyxxx}
-f <- setup_sdmdata(species_name = unique(coord1sp[1]) ,
+f <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[,-1],
               predictors = example_vars,
-              models_dir = "./1_setupsdmdata_tests/setupsdmdataub",
+              models_dir = "./setupsdmdata/setupsdmdataub",
               real_absences = NULL,
               buffer_type = "user",
               buffer_shape = myshapefile,
@@ -255,6 +260,6 @@ head(f)
 ```
 
 ```{r remedyzzz}
-knitr::include_graphics("./1_setupsdmdata_tests/setupsdmdataub/Eugenia_florida/present/data_setup/sdmdata_Eugenia_florida.png")
+knitr::include_graphics("./setupsdmdata/setupsdmdataub/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
