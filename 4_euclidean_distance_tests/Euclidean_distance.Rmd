@@ -75,7 +75,7 @@ plot(mindist1)
 compareRaster(mindist1, mindist1hd)
 ```
 
-##dentro do pacote (setup e do_any) deve ser igual 
+## dentro do pacote (setup e do_any) deve ser igual 
 
 ```{r, eval = T}
 setup <- setup_sdmdata(species_name = especies[1],
@@ -100,27 +100,29 @@ compareRaster(M, mindist1hd)
 
 (blz tá fazendo bem dentro das funções do pacote)
 
-```{r}
+
+```{r,  echo = F}
 knitr::include_graphics("./eucl/Abarema_langsdorffii/present/partitions/centroid_cont_Abarema_langsdorffii_1_1.png")
 knitr::include_graphics("./eucl/Abarema_langsdorffii/present/partitions/mindist_cont_Abarema_langsdorffii_1_1.png")
 ```
  
-Mas não dá pra projtar. Projetar seria:
+Mas não dá pra projetar. Projetar seria:
 
 + guardar o valor do centroide ambiental e calcular de novo para o novo set de variáveis
-+ guardar os valores ambientais nos pontos de origem na projeçãõ de origem e calcular de novo mindist para cada pixel das novas camadas. 
++ guardar os valores ambientais nos pontos de origem na projeção de origem e calcular de novo mindist para cada pixel das novas camadas. 
 
-[daí é que eu vou separar a função como domain e mahal e um dos slots vai ser o centroide e outro dos slots vai ser o resultado do extract #wishmeluck podendo separar acho que isto já é papitas]
+[daí é que eu vou separar a função como domain e mahal e um dos slots vai ser o centroide e outro dos slots vai ser o resultado do extract `#wishmeluck` podendo separar acho que isto já é papitas --se nãõ der para fazer isso a função euclidean tem que devolver em return esses valores e projetar a partir daí - seria a solução S3 capenga - rodar duas vezes a função euclidean msa a segunda vc entra com centroide e com os valores do extract]
 
 
-# Outro team: com essa função antiga, dá para escrever o buffer de distância ambiental 
+# Outro tema: tem que ter uma distância máxima + como diferem de mahalanobis?
 
-A lógica da distância ambiental é que deveria ter uma distância máxima para cortar o raster, ou nada do que varia do lado de maior adequabilidade (menor distância) vai poder ser observado. Isto porque a distribuição dos valores pode ser particular. Aqui vou usar `centroid` e `mindist` junto com `mahal` de dismo como um padrão do que já está estabelecido. 
+A lógica da distância ambiental (nos modelos e no buffer) é que deveria ter uma distância máxima para cortar o raster, ou nada do que varia do lado de maior adequabilidade (menor distância) vai poder ser observado. Isto porque a distribuição dos valores pode ser particular. Aqui vou usar `centroid` e `mindist` junto com `mahal` de dismo como um padrão do que já está estabelecido. 
 
 Faço esses três modelos e vejo 
 
 1. como os valores de distância se distribuem
-2. onde ficariam os LPT (lower presence training point) e o que acontece se eu cortar 3. por esse LPT ou 4. por qualquer outro quantil
+2. onde ficariam os LPT (lower presence training point)
+3. o que acontece se eu cortar por esse LPT ou por qualquer outro quantil
 
 ### 1. como diferem os três algoritmos
 
@@ -222,7 +224,7 @@ plot(h, main = "mahal")
 ```{r, eval = T, echo = F}
 
 meds <- apply(df, 2, median, na.rm = T)
-quant <- apply(df, 2, quantile, na.rm = T, probs = 0.8)
+quant <- apply(df, 2, quantile, na.rm = T, probs = 0.2)
 
 par(mfrow = c(1,3))
 plot(centroide_original > meds["cen"])
@@ -272,5 +274,4 @@ buf_env <- create_buffer(species_name = especies,
 plot(buf_env)
 ```
 
-#mas agora é hora de fazer a separação pro S4. 
 
