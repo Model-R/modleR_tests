@@ -12,7 +12,7 @@ output:
 knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 ```
 
-```{r}
+```{r, echo = F}
 library(rJava)
 library(raster)
 #library(ModelR)
@@ -20,17 +20,14 @@ devtools::load_all("../../modleR")
 library(dplyr)
 ```
 
-# Dataset
+# Dataset - 
 
-```{r dataset}
+```{r dataset, echo = F}
 ## Creating an object with species names
 especies <- names(coordenadas)[1]
 # Selecting only coordinates for the first species
 coord1sp <- coordenadas[[1]]
-head(coord1sp)
-dim(coord1sp)
 # Subsetting data into training and test
-ceiling(0.7 * nrow(coord1sp))
 # Making a sample of 70% of species' records
 set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
 # Creating training data set (70% of species' records)
@@ -39,192 +36,241 @@ train_set <- coord1sp[set,]
 test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
 ```
 
+
+
+```{r vars, message = F, eval = T, echo = T}
 # Fitting and projection datasets
-
-
-```{r vars, message = F, eval = T}
 fit_data <- raster::stack("../data/env/cropped_proj.tif")
 ```
 
-```{r centroide}
 
-centroide1 <- modleR::euclidean(predictors = example_vars,
-                                occurrences = train_set[,c(2,3)],
-                                algo = "centroid")
-centroide2 <- modleR::euclidean(predictors = fit_data,
+# Test 1: estrutura da função antiga
+
+A função tem que funcionar se a pessoa indicar o filename - o qual entra por um loop diferente do que apenas criar o objeto e deixá-lo no disco. nesse caso ela deve aceitar overwrite = T
+
+```{r centroide}
+args(euclidean)
+centroide1 <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
                                 algo = "centroid")
 plot(centroide1)
-plot(centroide2)
-points(train_set[,c(2,3)])
-
-```
-
-```{r mindist}
-
-mindist1 <- modleR::euclidean(predictors = example_vars,
-                              occurrences = train_set[,c(2,3)],
-                              algo = "mindist")
-mindist2 <- modleR::euclidean(predictors = fit_data,
-                              occurrences = train_set[,c(2,3)],
-                              algo = "mindist")
-
+#a unica diferença é o filename - que guarda diretamente no HD
+centroide1hd <- modleR::euclidean(predictors = fit_data,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "centroid", 
+                                filename = "./eucl/test_centroide.tif",
+                                overwrite = T)
+plot(centroide1hd)
+compareRaster(centroide1, centroide1hd)#são iguais em efeito
+mindist1 <- modleR::euclidean(predictors = fit_data,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "mindist")
+mindist1hd <- modleR::euclidean(predictors = fit_data,
+                                occurrences = train_set[,c(2,3)],
+                                algo = "mindist", 
+                                filename = "./eucl/test_mindist.tif",
+                                overwrite = T)
 plot(mindist1)
-points(train_set[,c(2,3)])
-plot(mindist2)
-points(train_set[,c(2,3)])
+#plot(mindist1hd)
+compareRaster(mindist1, mindist1hd)
 ```
 
+##dentro do pacote (setup e do_any) deve ser igual 
 
-```{r cut, eval = F}
-a <- rescale_layer(mindist1)
-plot(a)
-a > 0.8
-plot(sort(values(a)))
-
-plot(a > 0.95, main = "dist > 0.95", col = c("white", "green"))
-plot(a > 0.99, main = "dist > 0.99", legend = F, add = T, col = c(NA, "red"))
-maps::map(,,,add = T)
-
-```
-
-
-```{r, eval = F}
+```{r, eval = T}
 setup <- setup_sdmdata(species_name = especies[1],
                        occurrences = coord1sp[, -1],
                        predictors = fit_data,
                        models_dir = "./eucl")
-```
-```{r, eval = F}
-
-centroid_no_proj <- do_any(species_name = especies[1],
+centroid_do_any <- do_any(species_name = especies[1],
                            predictors = fit_data,
                            write_png = T,
                            algo = "centroid",
                            models_dir = "./eucl")
-mindist_no_proj <- do_any(species_name = especies[1],
+mindist_do_any <- do_any(species_name = especies[1],
                           predictors = fit_data,
                           write_png = T,
                           algo = "mindist",
                           models_dir = "./eucl")
+C <- raster("./eucl/Abarema_langsdorffii/present/partitions/centroid_cont_Abarema_langsdorffii_1_1.tif")
+M <- raster("./eucl/Abarema_langsdorffii/present/partitions/mindist_cont_Abarema_langsdorffii_1_1.tif")
+compareRaster(C, centroide1hd)
+compareRaster(M, mindist1hd)
 ```
 
-
-## Compara a forma dos valores com domain e mahal
+(blz tá fazendo bem dentro das funções do pacote)
 
 ```{r}
-centroide1 <- modleR::euclidean(predictors = example_vars,
-                                occurrences = train_set[,c(2,3)],
-                                algo = "centroid")
-mahal1 <- dismo::mahal(x = example_vars,
-                       p = train_set[,c(2,3)])
-mahal1p <- predict(mahal1, example_vars)
-par(mfrow = c(1, 2))
-plot(mahal1p)
-plot(centroide1)
-
-plot(sort(values(centroide1)))
-plot(sort(values(mahal1p)))
-plot(sort(values(centroide1)), sort(values(mahal1p)))
+knitr::include_graphics("./eucl/Abarema_langsdorffii/present/partitions/centroid_cont_Abarema_langsdorffii_1_1.png")
+knitr::include_graphics("./eucl/Abarema_langsdorffii/present/partitions/mindist_cont_Abarema_langsdorffii_1_1.png")
 ```
+ 
+Mas não dá pra projtar. Projetar seria:
+
++ guardar o valor do centroide ambiental e calcular de novo para o novo set de variáveis
++ guardar os valores ambientais nos pontos de origem na projeçãõ de origem e calcular de novo mindist para cada pixel das novas camadas. 
+
+[daí é que eu vou separar a função como domain e mahal e um dos slots vai ser o centroide e outro dos slots vai ser o resultado do extract #wishmeluck podendo separar acho que isto já é papitas]
 
 
-```{r}
+# Outro team: com essa função antiga, dá para escrever o buffer de distância ambiental 
+
+A lógica da distância ambiental é que deveria ter uma distância máxima para cortar o raster, ou nada do que varia do lado de maior adequabilidade (menor distância) vai poder ser observado. Isto porque a distribuição dos valores pode ser particular. Aqui vou usar `centroid` e `mindist` junto com `mahal` de dismo como um padrão do que já está estabelecido. 
+
+Faço esses três modelos e vejo 
+
+1. como os valores de distância se distribuem
+2. onde ficariam os LPT (lower presence training point) e o que acontece se eu cortar 3. por esse LPT ou 4. por qualquer outro quantil
+
+### 1. como diferem os três algoritmos
+
+```{r, echo = F}
 centroide_original <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
                                 algo = "centroid")
 mindist_original <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
                                 algo = "mindist")
-mahal_original <- dismo::mahal(x = fit_data,
+mahal_mod <- dismo::mahal(x = fit_data,
                        p = train_set[,c(2,3)])
-mahalp <- predict(mahal_original, fit_data)
+mahal_original <- predict(mahal_mod, fit_data)
 par(mfrow = c(1, 3))
-plot(mahalp)
-plot(centroide_original)
-plot(mindist_original)
+plot(centroide_original, main = "centroide")
+points(train_set[,c(2,3)], pch = 19)
+plot(mindist_original, main = "mindist")
+points(train_set[,c(2,3)], pch = 19)
+plot(mahal_original, main = "mahal")
+points(train_set[,c(2,3)], pch = 19)
+
+plot(sort(getValues(centroide_original)))
+plot(sort(getValues(mindist_original)))
+plot(sort(getValues(mahal_original)))
 ```
 
+Centroide varia menos abruptamente, depois vem mindist e depois mahal (Mahal tem a distribuição de valores mais asimétrica), mas o maior problema é a visualização dos valores, os valores negativos fazem com que a adequabilidade alta fique invisível. Por isso Mahalanobis é a mais diferente mas também a menos interessante em termos de padrão geográfico (sem cortar)
 
 
-
-```{r}
+```{r, echo = F}
 library(GGally)
-df <- data.frame(cen = values(centroide_original), 
-                 min = values(mindist_original), 
-                 mah = values(mahalp))
+df <- data.frame(cen = getValues(centroide_original), 
+                 min = getValues(mindist_original), 
+                 mah = getValues(mahal_original))
 ggpairs(df)
-
-
 ```
 
-# cómo se distribuyen esos dados??
+# 2. em que quantil fica o LPT de cada um destes modelos?
+
+Basicamente fitar uma função empirica da distribuição, extrair o ponto com menor adequabilidade e ver onde esse valor se encontra entre os valores. Estou usando LPT porque uma primeira alternativa era cortar pelo LPT =  fazer com que esse valor fosse automaticamente a distância máxima - isso era um pouco arbitrário mas buscava obter uma distância máxima que ainda tivesse algum significado biológico para a espécie. 
 
 ```{r}
-Fn_cen <- ecdf(df$cen)
+Fn_cen <- ecdf(df$cen) #fita a função
 excen <- extract(centroide_original, coord1sp[,c(2,3)])
-Fn_cen(min(excen))
-#el LPT está en el quantil 42. 
+(LPT_cen <- min(excen))
+Fn_cen(LPT_cen)#vê onde fica o mínimo 
+
 Fn_min <- ecdf(df$min)
 exmin <- extract(mindist_original, coord1sp[,c(2,3)])
-Fn_min(min(exmin))
-#el LPT de mindist está en el quantil 60. 
+(LPT_min <- min(exmin))
+Fn_min(LPT_min)
+
 Fn_mah <- ecdf(df$mah)
-exmah <- extract(mahalp, coord1sp[,c(2,3)])
-Fn_mah(min(exmah))
-#el LPT de mahal está en el quantil 67. la mayor parte de la distancia ni puta idea si sirve 
+exmah <- extract(mahal_original, coord1sp[,c(2,3)])
+(LPT_mah <- min(exmah))
+Fn_mah(LPT_mah)
 ```
 
-# centroide varia menos abruptamente
-#o LPT fica em lugares diferentes
+### graficamente:
 
 ```{r}
 par(mfrow = c(1, 3))
-plot(sort(df$cen))
-abline(v = sum(!is.na(df$cen))*Fn_cen(min(excen)), col = "red")
+plot(sort(df$cen), main = "centroid")
+abline(v = sum(!is.na(df$cen)) * Fn_cen(LPT_cen), col = "red")
 
-plot(sort(df$mah))
-abline(v = sum(!is.na(df$mah))*Fn_mah(min(exmah)), col = "red")
+plot(sort(df$min), , main = "mindist")
+abline(v = sum(!is.na(df$min)) * Fn_min(LPT_min), col = "red")
 
-plot(sort(df$min))
-abline(v = sum(!is.na(df$min))*Fn_min(min(exmin)), col = "red")
+plot(sort(df$mah), , main = "mahal")
+abline(v = sum(!is.na(df$mah)) * Fn_mah(LPT_mah), col = "red")
 ```
 
-```
 
-# se eu cortar os três pela mediana
+## Cortando por esse LPT dá para ver a variação no intervalo que importa (e mesmo assim mahal não sabe distinguir muitas coisas)
 
-```{r}
+```{r, echo = F}
 par(mfrow = c(1,3))
-meds <- apply(df, 2, median, na.rm = T)
-q <- quantile(df$cen, 0.8, na.rm = T, names = F)
+plot(centroide_original > LPT_cen, main = "centroide")
+plot(mindist_original > LPT_min, main = "mindist")
+plot(mahal_original > LPT_mah, main = "mahal")
 
+c <- centroide_original
+m <- mindist_original
+h <- mahal_original
+
+par(mfrow = c(1,3))
+c[c <= LPT_cen] <- LPT_cen
+m[m <= LPT_min] <- LPT_min
+h[h <= LPT_mah] <- LPT_mah
+
+plot(c, main = "centroide")
+plot(m, main = "mindist")
+plot(h, main = "mahal")
+```
+
+
+## Cortando pela mediana ou por qualquer outro quantil igual
+
+```{r, eval = T, echo = F}
+
+meds <- apply(df, 2, median, na.rm = T)
 quant <- apply(df, 2, quantile, na.rm = T, probs = 0.8)
+
+par(mfrow = c(1,3))
 plot(centroide_original > meds["cen"])
 plot(mindist_original > meds["min"])
-plot(mahalp > meds["mah"])
+plot(mahal_original > meds["mah"])
 
 centroide1 <- centroide_original
 mindist1 <- mindist_original
-mahalp1 <- mahalp
+mahal_original1 <- mahal_original
 
 centroide1[centroide1 <= meds["cen"]] <- meds["cen"]
 plot(centroide1)
 mindist1[mindist1 <= meds["min"]] <- meds["min"]
 plot(mindist1)
-mahalp1[mahalp1 <= meds["mah"]] <- meds["mah"]
-plot(mahalp1)
-
-
+mahal_original1[mahal_original1 <= meds["mah"]] <- meds["mah"]
+plot(mahal_original1)
 ```
 
-e se comparássemos isto a buffer?
 
-```{r}
+```{r, eval = T, echo = F}
+centroide2 <- centroide_original
+mindist2 <- mindist_original
+mahal_original2 <- mahal_original
+
 par(mfrow = c(1, 3))
-plot(centroide_original > quant["cen"])
-plot(mindist_original > quant["min"])
-plot(mahalp1 > quant["mah"])
-
+centroide2[centroide2 <= meds["cen"]] <- quant["cen"]
+plot(centroide2)
+mindist2[mindist2 <= meds["min"]] <- quant["min"]
+plot(mindist2)
+mahal_original2[mahal_original2 <= quant["mah"]] <- quant["mah"]
+plot(mahal_original2)
 ```
+
++ Uma pergunta é se corto dentro de euclidean (uma vez só, parâmetro na função) ou por fora (um corte em buffer e outro em do_any())
+
+
+# Incluí este filtro ambiental na função buffer: 
+
+```{r, eval = T}
+buf_env <- create_buffer(species_name = especies,
+                       occurrences = coord1sp[, -1],
+              predictors = fit_data, 
+              buffer_type = "environmental_distance",
+              env_distance = "centroid",
+              max_env_dist = 0.7, 
+              write_buffer = T, )
+plot(buf_env)
+```
+
+#mas agora é hora de fazer a separação pro S4. 
 
