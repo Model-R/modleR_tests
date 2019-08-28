@@ -13,6 +13,7 @@ object@presence
 object@centroid
 object@presvals
 
+
 euclidean <- function(predictors,
                       occurrences,
                       algo,
@@ -53,7 +54,7 @@ out <- raster(x)
 
 }
 
-		cn <- colnames(object@presence)
+		eu <- colnames(object@presence)
 
 		tr <- blockSize(out, n=nlayers(x)+2)
 		pb <- pbCreate(tr$n, ...)
@@ -62,7 +63,7 @@ out <- raster(x)
 			rr <- firstrow + tr$row[i] - 1
 			vals <- getValuesBlock(x, row=rr, nrows=tr$nrows[i], firstcol, ncols)
 
-			vals <- vals[,cn,drop=FALSE]
+			vals <- vals[,eu,drop=FALSE]
 			if (toCenter) {
 				res <- 1 - apply(data.frame(vals), 1, FUN=function(z) mahalanobis(z, m, object@cov, inverted=TRUE))
 			} else {
@@ -91,5 +92,7 @@ out <- raster(x)
 		pbClose(pb)
 		return(out)
 	}
+#ok
 }
 
+)
