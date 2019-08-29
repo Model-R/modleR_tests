@@ -126,5 +126,5 @@ setMethod('euclidean', signature(x = 'data.frame', p = 'missing'),
           }
 )
 #table <- extract(coord1sp[,])
-ee <- euclidean(x = example_vars, p = coord1sp[,c(2,3)])
-is(ee)
+#ee <- euclidean(x = example_vars, p = coord1sp[,c(2,3)])
+#is(ee)
