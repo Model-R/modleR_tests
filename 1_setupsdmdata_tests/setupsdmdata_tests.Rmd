@@ -23,7 +23,7 @@ library(raster)
 #library(modleR)
 library(dplyr)
 #eu estou usando uma cópia local para desenvolvimento
-devtools::load_all("../../modleR")
+devtools::load_all("../../1_modleR")
 library(maps)
 library(maptools)
 
@@ -33,13 +33,13 @@ library(maptools)
 
 # Selecting one species as an example
 
-We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
+We use a standard dataset inside the package `modleR`. First, from `example_occs` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
 
 ````{r dataset}
 ## Creating an object with species names
-especies <- names(coordenadas)[1]
+especies <- names(example_occs)[1]
 # Selecting only coordinates for the first species
-coord1sp <- coordenadas[[1]]
+coord1sp <- example_occs[[1]]
 head(coord1sp)
 dim(coord1sp)
 # Subsetting data into training and test

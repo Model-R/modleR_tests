@@ -10,7 +10,7 @@ output:
 Here we test the function `setup_sdmdata()` and its different parametrization options. This function prepares the data to run the models with `do_any()` or `do_many()` functions. It creates an object in the workspace to be used in `do_any()` or `do_many()` and writes two csv files with metadata and sdmdata.
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = F, warning = T)
+knitr::opts_chunk$set(echo = TRUE, message = F, warning = T, cache = T)
 ```
 
 Loading required packages.
@@ -21,7 +21,7 @@ library(raster)
 #library(modleR)
 library(dplyr)
 #eu estou usando uma cópia local para desenvolvimento
-devtools::load_all("../../modleR")
+devtools::load_all("../../1_modleR")
 library(maps)
 library(maptools)
 
@@ -31,13 +31,13 @@ library(maptools)
 
 # Selecting one species as an example
 
-We use a standard dataset inside the package `modleR`. First, from `coordenadas` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
+We use a standard dataset inside the package `modleR`. First, from `example_occs` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
 
 ````{r dataset}
 ## Creating an object with species names
-especies <- names(coordenadas)[1]
+especies <- names(example_occs)[1]
 # Selecting only coordinates for the first species
-coord1sp <- coordenadas[[1]]
+coord1sp <- example_occs[[1]]
 head(coord1sp)
 dim(coord1sp)
 # Subsetting data into training and test
@@ -168,9 +168,10 @@ args(final_model)
 
 final_model_present <- final_model(species_name = especies[1],
                                    models_dir = "projection/projtest",
-                                   select_par = "TSS",
+                                   select_par = "TSSmax",
                                    select_par_val = 0,
-                                   proj_dir = "present", overwrite = TRUE)
+                                   proj_dir = "present", 
+                                   overwrite = TRUE)
 ```
 
 or the projected models, 
@@ -178,25 +179,25 @@ or the projected models,
 ```{r remedy002, eval = TRUE}
 final_model_proj1 <- final_model(species_name = especies[1],
                                  models_dir = "projection/projtest",
-                                 select_par = "TSS",
+                                 select_par = "TSSmax",
                                  select_par_val = 0,
                                  proj_dir = "proj1", overwrite = TRUE)
 
 final_model_proj2 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
-            select_par = "TSS",
+            select_par = "TSSmax",
             select_par_val = 0,
             proj_dir = "proj2", overwrite = TRUE)
 
 final_model_proj3 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
-            select_par = "TSS",
+            select_par = "TSSmax",
             select_par_val = 0,
             proj_dir = "proj3", overwrite = TRUE)
 
 final_model_proj4 <- final_model(species_name = especies[1],
             models_dir = "projection/projtest",
-            select_par = "TSS",
+            select_par = "TSSmax",
             select_par_val = 0,
             proj_dir = "proj4", overwrite = TRUE)
 ```
