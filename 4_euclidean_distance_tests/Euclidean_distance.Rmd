@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE, message = F, warning = F)
 library(rJava)
 library(raster)
 #library(ModelR)
-devtools::load_all("../../modleR")
+devtools::load_all("../../1_modleR")
 library(dplyr)
 ```
 
@@ -24,9 +24,9 @@ library(dplyr)
 
 ```{r dataset, echo = F}
 ## Creating an object with species names
-especies <- names(coordenadas)[1]
+especies <- names(example_occs)[1]
 # Selecting only coordinates for the first species
-coord1sp <- coordenadas[[1]]
+coord1sp <- example_occs[[1]]
 # Subsetting data into training and test
 # Making a sample of 70% of species' records
 set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
@@ -52,22 +52,22 @@ A função tem que funcionar se a pessoa indicar o filename - o qual entra por u
 args(euclidean)
 centroide1 <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
-                                algo = "centroid")
+                                env_dist = "centroid")
 plot(centroide1)
 #a unica diferença é o filename - que guarda diretamente no HD
 centroide1hd <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
-                                algo = "centroid", 
+                                env_dist = "centroid", 
                                 filename = "./eucl/test_centroide.tif",
                                 overwrite = T)
 plot(centroide1hd)
 compareRaster(centroide1, centroide1hd)#são iguais em efeito
 mindist1 <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
-                                algo = "mindist")
+                                env_dist = "mindist")
 mindist1hd <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
-                                algo = "mindist", 
+                                env_dist = "mindist", 
                                 filename = "./eucl/test_mindist.tif",
                                 overwrite = T)
 plot(mindist1)
@@ -76,22 +76,22 @@ compareRaster(mindist1, mindist1hd)
 ```
 
 ## dentro do pacote (setup e do_any) deve ser igual 
-
-```{r, eval = T}
+##19Nov2019: isto nao deve rodar mais porque nao é mais algoritmo
+```{r, eval = F}
 setup <- setup_sdmdata(species_name = especies[1],
                        occurrences = coord1sp[, -1],
                        predictors = fit_data,
                        models_dir = "./eucl")
 centroid_do_any <- do_any(species_name = especies[1],
-                           predictors = fit_data,
-                           write_png = T,
-                           algo = "centroid",
-                           models_dir = "./eucl")
-mindist_do_any <- do_any(species_name = especies[1],
                           predictors = fit_data,
                           write_png = T,
-                          algo = "mindist",
+                          env_dist = "centroid",
                           models_dir = "./eucl")
+mindist_do_any <- do_any(species_name = especies[1],
+                         predictors = fit_data,
+                         write_png = T,
+                         env_dist = "mindist",
+                         models_dir = "./eucl")
 C <- raster("./eucl/Abarema_langsdorffii/present/partitions/centroid_cont_Abarema_langsdorffii_1_1.tif")
 M <- raster("./eucl/Abarema_langsdorffii/present/partitions/mindist_cont_Abarema_langsdorffii_1_1.tif")
 compareRaster(C, centroide1hd)
@@ -101,7 +101,7 @@ compareRaster(M, mindist1hd)
 (blz tá fazendo bem dentro das funções do pacote)
 
 
-```{r,  echo = F}
+```{r,  echo = F, eval = F}
 knitr::include_graphics("./eucl/Abarema_langsdorffii/present/partitions/centroid_cont_Abarema_langsdorffii_1_1.png")
 knitr::include_graphics("./eucl/Abarema_langsdorffii/present/partitions/mindist_cont_Abarema_langsdorffii_1_1.png")
 ```
@@ -129,10 +129,10 @@ Faço esses três modelos e vejo
 ```{r, echo = F}
 centroide_original <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
-                                algo = "centroid")
+                                env_dist = "centroid")
 mindist_original <- modleR::euclidean(predictors = fit_data,
                                 occurrences = train_set[,c(2,3)],
-                                algo = "mindist")
+                                env_dist = "mindist")
 mahal_mod <- dismo::mahal(x = fit_data,
                        p = train_set[,c(2,3)])
 mahal_original <- predict(mahal_mod, fit_data)
@@ -270,8 +270,5 @@ buf_env <- create_buffer(species_name = especies,
               buffer_type = "environmental_distance",
               env_distance = "centroid",
               max_env_dist = 0.7, 
-              write_buffer = T, )
-plot(buf_env)
+              write_buffer = T)
 ```
-
-
