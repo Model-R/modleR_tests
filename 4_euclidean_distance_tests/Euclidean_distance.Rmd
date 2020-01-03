@@ -265,10 +265,14 @@ plot(mahal_original2)
 
 ```{r, eval = T}
 buf_env <- create_buffer(species_name = especies,
-                       occurrences = coord1sp[, -1],
-              predictors = fit_data, 
-              buffer_type = "environmental_distance",
-              env_distance = "centroid",
-              max_env_dist = 0.7, 
-              write_buffer = T)
+                         occurrences = coord1sp[, -1],
+                         predictors = fit_data,
+                         buffer_type = "none",
+                         env_distance = "centroid",
+                         max_env_dist = 0.7,
+                         write_buffer = T)
+plot(fit_data[[1]])
+plot(buf_env, alpha = 0.8, add = T)
+plot(buf_env)
+
 ```

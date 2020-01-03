@@ -1,5 +1,7 @@
 # modleR_tests
 
+
+
 Codes for testing the functions in modleR package
 
 1. setupsdmdata_tests.Rmd
@@ -12,7 +14,7 @@ Codes for testing the functions in modleR package
 
 3. projection.Rmd 
 - tests projection in do_many and final_models- done
-- still having problems in the last chunk- When eval=FALSE it works. All outputs were done.
+- still having problems in the last chunk- When eval = FALSE it works. All outputs were done.
   
 
 4. Euclidean_distance.Rmd

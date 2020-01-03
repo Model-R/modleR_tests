@@ -1,5 +1,5 @@
 ---
-title: "Testing setupsdmdata in modleR"
+title: "Testing setup_sdmdata() in modleR"
 author: "Andrea Sánchez-Tapia & Sara Mortara"
 date: "`r Sys.Date()`"
 output:
@@ -26,8 +26,6 @@ library(dplyr)
 devtools::load_all("../../1_modleR")
 library(maps)
 library(maptools)
-
-
 
 ```
 
@@ -73,20 +71,35 @@ Lets explore different arguments in `setup_sdmdata()` function.
 args(setup_sdmdata)
 ```
 
+## The tests that should run here.
+
+1. real_absences 
+2. clean (checked 12/Nov/2019 when solving issue 35)
+3. geo_filt 
+4. select_variables (last time checked when implemented + saving metadata)
+5. partition types (checked when implemented)
+6. Does seed work? 
+
+__Buffers are tested in another document. __
+
+
+########### ATÉ AQUI #################
+
+
 ## Default options
 
 First, running with default options. Pseudo-absences are generated in the entire area of the predictor variables and data is partitioned following bootstrap procedures.
 
 ```{r }
 a <- setup_sdmdata(species_name = especies[1], # species #01
-              occurrences = coord1sp[,-1],
-              predictors = example_vars,
-              models_dir = "./setupsdmdata/setupsdmdatam",
-              real_absences = NULL,
-              buffer_type = NULL,
-              clean_dupl = T,
-              clean_nas = T,
-              seed = 512)
+                   occurrences = coord1sp[, -1],
+                   predictors = example_vars,
+                   models_dir = "./setupsdmdata/setupsdmdatam",
+                   real_absences = NULL,
+                   buffer_type = NULL,
+                   clean_dupl = T,
+                   clean_nas = T,
+                   seed = 512)
 ```
 
 Exploring the output object from `setup_sdmdata()`.
@@ -233,11 +246,11 @@ head(e)
 knitr::include_graphics("./setupsdmdata/setupsdmdataxd/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
 
-### user defined buffer: the user provides a shapefile. Maptools package to read the ".shp" file
+### user-defined buffer: the user provides a shapefile. rgdal package to read the ".shp" file
 
 ```{r remedy016}
 
-myshapefile <- readShapePoly("../data/myshapefile.shp")
+myshapefile <- rgdal::readOGR("../data/myshapefile.shp")
 
 ```
 
