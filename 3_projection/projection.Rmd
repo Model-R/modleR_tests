@@ -10,7 +10,7 @@ output:
 Here we test the function `setup_sdmdata()` and its different parametrization options. This function prepares the data to run the models with `do_any()` or `do_many()` functions. It creates an object in the workspace to be used in `do_any()` or `do_many()` and writes two csv files with metadata and sdmdata.
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = F, warning = T, cache = T)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = TRUE, cache = FALSE)
 ```
 
 Loading required packages.
@@ -18,22 +18,23 @@ Loading required packages.
 ```{r load}
 library(rJava)
 library(raster)
-#library(modleR)
 library(dplyr)
-#eu estou usando uma cópia local para desenvolvimento
-devtools::load_all("../../1_modleR")
 library(maps)
 library(maptools)
 
+```
 
-
+```{r load_all, echo = FALSE, eval = TRUE}
+#eu estou usando uma cópia local para desenvolvimento
+devtools::load_all("../../1_modleR/")
+#devtools::load_all("../1_modleR/")
 ```
 
 # Selecting one species as an example
 
 We use a standard dataset inside the package `modleR`. First, from `example_occs` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
 
-````{r dataset}
+```{r dataset}
 ## Creating an object with species names
 especies <- names(example_occs)[1]
 # Selecting only coordinates for the first species
@@ -58,7 +59,7 @@ predictor <- example_vars[[1]]
 # transforming the data frame with the coordinates in a spatial object
 pts <- SpatialPoints(coord1sp[,c(2,3)])
 # ploting environmental layer
-plot(predictor, legend = F)
+plot(predictor, legend = FALSE)
 points(lat ~ lon, data=coord1sp)
 ```
 
@@ -70,14 +71,14 @@ We want to fit everything in a small area around the occurrence points (generate
 ```{r, fig.height = 6}
 fit_data <- stack("../data/env/cropped_proj.tif")
 proj_folder <- "../data/env/proj/proj1/"
-proj_data <- list.files(proj_folder, full.names = T) %>%
+proj_data <- list.files(proj_folder, full.names = TRUE) %>%
     stack() %>%
     .[[1]]
 pts <- SpatialPoints(coord1sp[,c(2,3)])
 
-plot(!is.na(example_vars[[1]]), legend = F, add = F)
-plot(fit_data[[1]], legend = F, add = T)
-plot(proj_data[[1]], legend = F, add = T)
+plot(!is.na(example_vars[[1]]), legend = FALSE, add = FALSE)
+plot(fit_data[[1]], legend = FALSE, add = TRUE)
+plot(proj_data[[1]], legend = FALSE, add = TRUE)
 points(train_set[,2:3], col = "red", pch = 19)
 points(test_set[,2:3], col = "blue", pch = 19)
 
@@ -88,73 +89,73 @@ points(test_set[,2:3], col = "blue", pch = 19)
 
 A simple model with no buffer and no projection: 
 
-```{r enm1, message = F, eval = TRUE}
+```{r enm1, message = FALSE, eval = TRUE}
 # generating sdmdata
 sdm_no_proj <- setup_sdmdata(species_name = especies[1], 
                              occurrences = coord1sp[,-1],
                              predictors=fit_data, 
                              models_dir="projection/fit", 
-                             clean_dupl = T, 
-                             clean_na = T)
+                             clean_dupl = TRUE, 
+                             clean_na = TRUE)
 # running models
 no_proj <- do_many(species_name = especies[1],
                  predictors = fit_data,
                  models_dir = "projection/fit",
-                 bioclim = T,
-                 svmk = T)
+                 bioclim = TRUE,
+                 svmk = TRUE)
 
 no_proj.bc <- raster("projection/fit/Abarema_langsdorffii/present/partitions/bioclim_cont_Abarema_langsdorffii_1_1.tif")
 no_proj.svmk <- raster("projection/fit/Abarema_langsdorffii/present/partitions/svmk_cont_Abarema_langsdorffii_1_1.tif")
 plot(no_proj.bc)
-maps::map(, , add = T)
+maps::map(, , add = TRUE)
 plot(no_proj.svmk)
-maps::map(, , add = T)
+maps::map(, , add = TRUE)
 ```
 
 
 We project to a series of projections in the specified folder: `"./env/proj"`
 
-```{r proj, message = F, eval = TRUE}
+```{r proj, message = FALSE, eval = TRUE}
 ## first renaming layer names from predictors to match proj files 
 names(fit_data) <- paste0("proj1_", 1:6)
 
-sdm_yes_proj <- setup_sdmdata(species_name = especies[1], 
-                             occurrences = coord1sp[,-1],
-                             predictors = fit_data, 
-                             models_dir = "projection/projtest", 
-                             clean_dupl = T, 
-                             clean_na = T,
-                             buffer_type = "median",
-                             partition_type = "bootstrap",
-                             boot_n = 3)
+sdm_yes_proj <- setup_sdmdata(species_name = especies[1],
+                              occurrences = coord1sp[, -1],
+                              predictors = fit_data,
+                              models_dir = "projection/projtest",
+                              clean_dupl = TRUE,
+                              clean_na = TRUE,
+                              buffer_type = "median",
+                              partition_type = "bootstrap",
+                              boot_n = 3)
 
-yes_proj1 <- do_any(species_name = especies[1],
+yes_proj1 <- modleR::do_any(species_name = especies[1],
                  predictors = fit_data,
                  models_dir = "projection/projtest",
                  algo = "bioclim",
-                 project_model = T,
+                 project_model = TRUE,
                  proj_data_folder = "data/env/proj/",
-                 write_png = T)
+                 png_partitions = TRUE)
 
 yes_proj <- do_many(species_name = especies[1],
                     predictors = fit_data,
                     models_dir = "projection/projtest",
-                    bioclim = T,
-                    domain = T,
-                    glm = T,
-                    mahal = F,
-                    maxent = T,
-                    rf = T,
-                    svmk = T,
-                    svme = T,
-                    brt = T,
-                    project_model = T,
+                    bioclim = FALSE,
+                    domain = FALSE,
+                    glm = FALSE,
+                    mahal = FALSE,
+                    maxent = TRUE,
+                    rf = FALSE,
+                    svmk = FALSE,
+                    svme = FALSE,
+                    brt = FALSE,
+                    project_model = TRUE,
                     proj_data_folder = "../data/env/proj/",
-                    write_png = T)
+                    png_partitions = TRUE)
 ```
 
 ```{r list_results}
-results <- list.files("projection/projtest", pattern = ".tif$", recursive = T, full.names = T)
+results <- list.files("projection/projtest", pattern = ".tif$", recursive = TRUE, full.names = TRUE)
 length(results)#oito algoritmos, 5 projeções (present e as demais, nem vou plotar)
 ```
 

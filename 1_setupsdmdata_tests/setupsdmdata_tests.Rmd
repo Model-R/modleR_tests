@@ -59,7 +59,7 @@ predictor <- example_vars[[1]]
 pts <- SpatialPoints(coord1sp[,c(2,3)])
 # ploting environmental layer
 plot(predictor, legend = F)
-points(lat ~ lon, data=coord1sp)
+points(lat ~ lon, data = coord1sp)
 ```
 
 
