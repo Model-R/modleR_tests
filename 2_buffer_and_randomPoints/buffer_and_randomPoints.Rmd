@@ -3,9 +3,11 @@ title: "Testing background point generation in modleR"
 author: "Andrea Sánchez-Tapia & Sara Mortara"
 date: "`r Sys.Date()`"
 output:
-  html_document: 
+  html_document:
+    theme: cosmo
     number_sections: true
     toc: true
+    highlight: pygments
     
 ---
 
@@ -20,7 +22,7 @@ To run this example you will need `modleR`and the additional packages `rJava`, `
 ```{r packages,   message=FALSE, eval=FALSE}
 packages <- c("rJava", "raster", "dplyr", "devtools")
 instpack <- packages[!packages %in% installed.packages()]
-if(length(instpack) > 0) {
+if (length(instpack) > 0) {
     install.packages(packages[!packages %in% installed.packages()])
 }
 ```
@@ -29,6 +31,7 @@ If you don't have `modleR` installed, run:
 
 ```{r github, eval=FALSE}
 devtools::install_github("Model-R/modleR", ref = "master")
+library(modleR)
 ```
 
 ```{r load_all, echo = FALSE, eval = TRUE}
@@ -43,12 +46,11 @@ Then, load all required packages.
 library(rJava)
 library(raster)
 library(dplyr)
-#library(modleR)
 ```
 
 # The example data set 
 
-We use a standard dataset inside the package `modleR`. First, from `example_occs` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data. 
+We use a standard dataset inside the package __modleR__. First, from `example_occs` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data. 
 
 ```{r dataset}
 ## Creating an object with species names
@@ -70,7 +72,6 @@ Now let's the check our data points. We plot the traning and test data sets with
 
 ```{r plotdataset}
 # selecting only the first PCA axis
-#isto dá erro em environmental distance porque não sabe calcular com apply - botei uma questão de dimensão
 predictor <- example_vars[[1]]
 # transforming the data frame with the coordinates in a spatial object
 pts <- SpatialPoints(coord1sp[,c(2,3)])
@@ -82,32 +83,32 @@ points(train_set[,2:3], col = "red", pch = 19)
 points(test_set[,2:3], col = "blue", pch = 19)
 ```
 
-# Function `create_buffer()` and `setup_sdmdata()`
+# Inclusion buffers (distance-base or user-defined)
 
-Here, for all types of buffer, we demonstrate how function `create_buffer()` works by running it using different types of buffer and then generating the background values with `randomPoints()` from `dismo` package. 
+We define a __buffer__ as a maximum distance or area, within which pseudoabsences will be sampled. On the other hand, a __filter__ excludes areas too close to the occurrence points (in the environmental or the geographic space), in order to control overfitting.
 
-We implemented three types of buffer that can be combined: (A) geographic distance buffers (B) environmental distance buffer (C) a "minimal distance" (geographic or environmental) exclusion buffer, to avoid areas that are very close to the occurrence points. 
+Here, for all types of buffer and filters, we demonstrate how function `create_buffer()` works by running it and then generating the background values with `randomPoints()` from package __dismo__.
 
-- __(distance and max, mean, median)__ geographic distance buffers: 
+In __modleR__, we implemented: 
+
+- User-defined buffer — Allows the user to provide their own shapefile as available area (M) to sample pseudoabsences
+- Geographic distance buffers — Instead of using a specific polygon for the buffer construction, it samples pseudoabsences according to several options: 
   - `max`: the maximum distance between any two occurrence points
   - `mean`: the mean distance between all occurrence points
   - `median`: the median of the pairwise distance between occurrence points
   - `distance`: the user can specify a particular distance to be used as buffer width - in raster units
-- __(user)__  Instead of using a distance for the buffer construction, option `user` allows the user to provide their own shapefile as available area (M) to sample pseudoabsences
-- __(environmental)__ an `environmental distance` filter that:
-  - samples within areas with environmental affinities using `max_env_dist`
-  - excludes areas too close in the environmental space, using `min_env_dist`
-- __(C)__ a minimum geographic distance (`min_geog_dist`) exclusion buffer, that excludes points that are too close to the occurrence points, in order to avoid overfitting
+- Distance exclusion filters:
+  - In the geographic space, using parameter `min_geog_dist`.
+  - In the environmental space, using `min_env_dist` and setting a `dist_type`
 
 Figure 1 explains the possible combinations of these three kinds of buffers.
 
-```{r fig_buf}
+```{r fig_buf, echo = FALSE, out.width=2}
 knitr::include_graphics("./figs/buffer_table.pdf")
 ```
 
-## Pseudoabsence selection using `create_buffer()` and `randomPoints()`
 
-### Inclusion buffer with maximum distance `max`
+## Inclusion buffer with maximum distance `max`
 
 In this example, we use `buffer_type = "maximum"` to generate our first object.
 
@@ -133,7 +134,7 @@ plot(buf.max, add = TRUE, legend = FALSE,
 points(buf.max.p, col = "blue", pch = 19, cex = 0.7)
 ```
 
-### Inclusion buffer with `mean` distance 
+## Inclusion buffer with `mean` distance 
 
 In this example, we use `buffer_type = "mean"`. 
 
@@ -159,7 +160,7 @@ plot(buf.mean, add = TRUE, legend = FALSE,
 points(buf.mean.p, col = "blue", pch = 19, cex = 0.7)
 ```
 
-### Inclusion buffer with `median` of distances
+## Inclusion buffer with `median` of distances
 
 In this example, we use `buffer_type="median"`
 
@@ -185,7 +186,7 @@ plot(buf.med, add = TRUE, legend = FALSE,
 points(buf.med.p, col = "blue", pch = 19, cex = 0.7)
 ```
 
-### Inclusion buffer with a specific `distance`
+## Inclusion buffer with a specific `distance`
 
 In this example we specify a particular distance from each point to sample pseudoabsences inside the buffer. We use `buffer_type = "distance"` and `dist_buf = 5`. Be aware that `dist_buf` must be set when using a distance buffer. 
 
@@ -194,7 +195,7 @@ In this example we specify a particular distance from each point to sample pseud
 buf.dist <- create_buffer(occurrences = coord1sp[,c(2,3)],
                      predictors = predictor,
                      buffer_type = "distance",
-                     dist_buf = 1)
+                     dist_buf = 5)
 # using buf.dist to generate 500 pseudoabsences
 buf.dist.p <- dismo::randomPoints(buf.dist,
                     n = 500,
@@ -211,13 +212,13 @@ plot(buf.dist, add = TRUE, legend = FALSE,
 points(buf.dist.p, col = "blue", pch = 19, cex = 0.7)
 ```
 
-### Inclusion buffer within a user-defined shapefile (`user` and `buffer_shape`)
+## Inclusion buffer within a user-defined shapefile (`user` and `buffer_shape`)
 
 In this example we specify a shapefile that we use as the buffer. Please note that a `buffer_shape` must be included in order to use this buffer. 
 
-```{r usr}
-myshapefile <- rgdal::readOGR("../data/myshapefile.shp")
+```{r usr, message=FALSE, warning=FALSE}
 #myshapefile <- rgdal::readOGR("./data/myshapefile.shp")
+myshapefile <- rgdal::readOGR("../data/myshapefile.shp")
 
 buf.user <- create_buffer(occurrences = coord1sp[,c(2,3)],
                           predictors = predictor,
@@ -239,57 +240,107 @@ plot(buf.user, add = TRUE, legend = FALSE,
 points(buf.user.p, col = "blue", pch = 19, cex = 0.7)
 ```
 
-### Inclusion buffer using a euclidean environmental distance
+# Exclusion filters in the geographical and environmental spaces 
 
-In addition to geographic distance buffers, we can apply an environmental distance buffer, that sets the area available for pseudoabsence sampling as a function of the environmental conditions found at the occurrence points.
-Since environmental distances can take large values, the user may set a maximum environmental distance, expressed in quantile form, to set a maximum distance in order to cut (and create) this buffer. 
+## Geographic distance filter
 
-NOTE: THE ENVIRONMENTAL DISTANCE BUFFER CAN BE APPLIED SIMULTANEOUSLY WITH OTHER DISTANCE BUFFERS
+The simplest exclusion filter is based on the geographical distance, in the units of the predictor rasters (here, degrees)
 
+```{r geog, message=FALSE, warning=FALSE}
+geog.filt <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                          predictors = predictor,
+                          buffer_type = "none",
+                          min_geog_dist = 1)
 
-#### Sem buffer_type 
+# using buf.dist to generate 500 pseudoabsences
+geog.filt.p <- dismo::randomPoints(geog.filt,
+                                  n = 500,
+                                  excludep = TRUE,
+                                  p = pts)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor,
+     legend = FALSE, main = "geographic filter")
+## adding buff
+plot(geog.filt, add = TRUE, legend = FALSE, 
+     col = scales::alpha("grey", 0.8), border = "black")
+## adding buf.user.p
+points(geog.filt.p, col = "blue", pch = 19, cex = 0.7)
+points(coord1sp[,c(2,3)], col = "red", pch = 19, cex = 0.7)
+```
 
-```{r}
-#the environmental distance filter works with a stack, rather than a single layer (ö testar com poucos pontos, pois não faz sentido cortar pela mediana com n 1 ou 2)
+## Environmental distance filter
+
+The second kind of filter is based on the euclidean environmental distance. This can be either the euclidean distance to the environmental centroid of the occurrences (`env_distance = "centroid"`) or the minimum euclidean distance to any occurrence point (`env_distance = "mindist"`). 
+
+### An example with `centroid`, taking away 10% of the closest points
+
+```{r centroid, fig.show='hold'}
 predictor <- example_vars
 buf.env <- create_buffer(occurrences = coord1sp[,c(2,3)],
                          predictors = predictor,
                          env_filter = TRUE,
                          env_distance = "centroid",
-                         max_env_dist = 0.9, 
-                         min_env_dist = 0.05
+                         min_env_dist = 0.1
                          )
 
 # using buf.env to generate 500 pseudoabsences
 buf.env.p <- dismo::randomPoints(buf.env,
-                                  n = 50,
+                                  n = 500,
                                   excludep = TRUE,
                                   p = pts)
 # plotting environmental layer with background values
 ## environmental layer
 plot(predictor[[1]],
-     legend = FALSE, main = "environmental distance buffer")
-plot(env.buffer, add = FALSE)
-
+     legend = FALSE, main = "environmental distance filter (centroid)")
 ## adding buff
 plot(buf.env[[1]], add = TRUE, legend = FALSE, 
      col = scales::alpha("grey", 0.8), border = "black")
 ## adding buf.user.p
-points(coord1sp[,c(2,3)], col = "red")
-points(buf.env.p, col = "blue")
+points(coord1sp[,c(2,3)], col = "red", pch = 19, cex = 0.7)
+points(buf.env.p, col = "blue", pch = 19)
 ```
 
-#### Com `buffer_type`
+### An example with `mindist`, taking away 10% of the closest points
 
-```{r}
-#the environmental distance filter works with a stack, rather than a single layer (ö testar com poucos pontos, pois não faz sentido cortar pela mediana com n 1 ou 2)
+```{r mindist, fig.show='hold'}
+predictor <- example_vars
+buf.env <- create_buffer(occurrences = coord1sp[,c(2,3)],
+                         predictors = predictor,
+                         env_filter = TRUE,
+                         env_distance = "mindist",
+                         min_env_dist = 0.1
+                         )
 
+# using buf.env to generate 500 pseudoabsences
+buf.env.p <- dismo::randomPoints(buf.env,
+                                  n = 500,
+                                  excludep = TRUE,
+                                  p = pts)
+# plotting environmental layer with background values
+## environmental layer
+plot(predictor[[1]],
+     legend = FALSE, main = "environmental distance filter (mindist)")
+## adding buff
+plot(buf.env[[1]], add = TRUE, legend = FALSE, 
+     col = scales::alpha("grey", 0.8), border = "black")
+## adding buf.user.p
+points(coord1sp[,c(2,3)], col = "red", pch = 19, cex = 0.7)
+points(buf.env.p, col = "blue", pch = 19)
+```
+
+
+# Superimposing buffers and filters
+
+Buffers and filters can be used simultaneously. Here is an example with a maximum distance buffer and a 5% centroid environmental filter: 
+
+```{r max_env}
 buf.env <- create_buffer(occurrences = coord1sp[,c(2,3)],
                          predictors = predictor,
                          buffer_type = "maximum",
                          env_filter = TRUE,
                          env_distance = "centroid",
-                         max_env_dist = 0.5)
+                         min_env_dist = 0.05)
 
 # using buf.env to generate 500 pseudoabsences
 buf.env.p <- dismo::randomPoints(buf.env,
@@ -304,26 +355,28 @@ plot(predictor[[1]],
 plot(buf.env, add = TRUE, legend = FALSE, 
      col = scales::alpha("grey", 0.8), border = "black")
 ## adding buf.user.p
-points(buf.env.p, col = "blue")
+points(buf.env.p, col = "blue", pch = 19)
 
 ```
 
 
 
-### The `mindist` _exclusion_ buffer
+# Using function `setup_sdmdata()`
 
-In addition to the combination of distance and environmental buffers, we implemented the __exclusion__ of points that are too close to the occurrence records, to control for overfitting. All distance buffers can be used with the additional parameter `mindist`. <!-- maybe exclusion_distance? -->
+So far, the examples have been using function `create_buffer()` and sampling directly. In modleR, however, function `setup_sdmdata()` can take all arguments and execute the pseudoabsence sampling, as well as data partitioning. 
 
-```{r MINDIST, eval = TRUE}
-#maxdist + mindist
+The following examples show the use of function `setup_sdmdata()` in several combinations of buffers and filters. 
+
+```{r MINDIST, eval = TRUE, out.width= 480}
+#maxbuff + mindist
 m <- setup_sdmdata(species_name = especies[1],
               occurrences = coord1sp[, -1],
               predictors = example_vars,
               models_dir = "./buffer_res/mindist_maxdist",
               buffer_type = "maximum",
-              dist_min = 3,
+              min_geog_dist = 3,
               clean_dupl = TRUE,
-              clean_na = TRUE)
+              clean_nas = TRUE)
 knitr::include_graphics("./buffer_res/mindist_maxdist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 
 #mean + mindist
@@ -332,9 +385,9 @@ m <- setup_sdmdata(species_name = especies[1],
               predictors = example_vars,
               models_dir = "./buffer_res/mindist_meandist",
               buffer_type = "mean",
-              dist_min = 3,
+              min_geog_dist = 3,
               clean_dupl = TRUE,
-              clean_na = TRUE)
+              clean_nas = TRUE)
 knitr::include_graphics("./buffer_res/mindist_meandist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 #median + mindist
 m <- setup_sdmdata(species_name = especies[1],
@@ -342,9 +395,9 @@ m <- setup_sdmdata(species_name = especies[1],
               predictors = example_vars,
               models_dir = "./buffer_res/mindist_mediandist",
               buffer_type = "median",
-              dist_min = 3,
+              min_geog_dist = 3,
               clean_dupl = TRUE,
-              clean_na = TRUE)
+              clean_nas = TRUE)
 knitr::include_graphics("./buffer_res/mindist_mediandist/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 
 #geog.distance + mindist
@@ -353,10 +406,11 @@ m <- setup_sdmdata(species_name = especies[1],
               predictors = example_vars,
               models_dir = "./buffer_res/mindist_distance",
               buffer_type = "distance",
-              dist_min = 3,
+              dist_buf = 7,
+              min_geog_dist = 3,
               clean_dupl = TRUE,
-              clean_na = TRUE,
-              dist_buf = 7)
+              clean_nas = TRUE
+              )
 knitr::include_graphics("./buffer_res/mindist_distance/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 
 #user + mindist
@@ -367,7 +421,7 @@ m <- setup_sdmdata(species_name = especies[1],
               models_dir = "./buffer_res/mindist_usrshp",
               buffer_type = "user",
               buffer_shape = myshapefile,
-              dist_min = 3,
+              min_geog_dist = 3,
               clean_dupl = TRUE,
               clean_nas = TRUE)
 knitr::include_graphics("./buffer_res/mindist_usrshp/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
@@ -379,7 +433,7 @@ m <- setup_sdmdata(species_name = especies[1],
               models_dir = "./buffer_res/envdist_usrshp",
               buffer_type = "mean",
               env_filter = TRUE, 
-              dist_min = 3,
+              min_env_dist = 3,
               clean_dupl = TRUE,
               clean_nas = TRUE)
 knitr::include_graphics("./buffer_res/envdist_usrshp/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
