@@ -101,10 +101,10 @@ In __modleR__, we implemented:
   - In the geographic space, using parameter `min_geog_dist`.
   - In the environmental space, using `min_env_dist` and setting a `dist_type`
 
-Figure 1 explains the possible combinations of these three kinds of buffers.
+Figure 1 explains the possible combinations of these two kinds of buffers.
 
-```{r fig_buf, echo = FALSE, out.width=2}
-knitr::include_graphics("./figs/buffer_table.pdf")
+```{r fig_buf, echo = FALSE}
+knitr::include_graphics("./figs/buffer_table_final.png")
 ```
 
 
@@ -438,4 +438,5 @@ m <- setup_sdmdata(species_name = especies[1],
               clean_nas = TRUE)
 knitr::include_graphics("./buffer_res/envdist_usrshp/Abarema_langsdorffii/present/data_setup/sdmdata_Abarema_langsdorffii.png")
 ```
+
 
