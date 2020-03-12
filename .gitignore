@@ -12,6 +12,7 @@
 3_projection/projection_files
 4_euclidean_distance_tests/eucl
 
-# ignore html outputs
-*.html
+# ignore anything rsconnect
+*rsconnect
+*cache
 

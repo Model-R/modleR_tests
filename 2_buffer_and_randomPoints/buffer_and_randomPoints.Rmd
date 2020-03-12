@@ -104,7 +104,7 @@ In __modleR__, we implemented:
 Figure 1 explains the possible combinations of these two kinds of buffers.
 
 ```{r fig_buf, echo = FALSE}
-knitr::include_graphics("./figs/buffer_table_final.png")
+knitr::include_graphics("./figs/fig04_buffer.png")
 ```
 
 
