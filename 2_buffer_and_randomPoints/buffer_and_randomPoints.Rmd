@@ -162,11 +162,11 @@ points(buf.mean.p, col = "blue", pch = 19, cex = 0.7)
 
 ## Inclusion buffer with `median` of distances
 
-In this example, we use `buffer_type="median"`
+In this example, we use `buffer_type = "median"`
 
 ```{r buffermedian, echo = FALSE, eval = TRUE, warning=FALSE}
 #par(mfrow = c(1,1))
-# creating an object with buffer_type=median
+# creating an object with buffer_type = median
 buf.med <- create_buffer(occurrences = coord1sp[,c(2,3)],
                      predictors = predictor,
                      buffer_type = "median")
