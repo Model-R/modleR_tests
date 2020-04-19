@@ -1,16 +1,14 @@
 ---
-title: "Projecting models"
-author: "Andrea Sánchez Tapia"
+title: "Projecting models in modleR"
+author: "Andrea Sánchez-Tapia"
 date: "`r Sys.Date()`"
-output:
-  html_document: default
-  pdf_document: default
+output: github_document
 ---
 
-Here we test the function `setup_sdmdata()` and its different parametrization options. This function prepares the data to run the models with `do_any()` or `do_many()` functions. It creates an object in the workspace to be used in `do_any()` or `do_many()` and writes two csv files with metadata and sdmdata.
+Here we explain the setup for projecting models in __modleR__. 
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = TRUE, cache = FALSE)
+knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = TRUE, cache = FALSE, fig.height = 6, fig.width = 6)
 ```
 
 Loading required packages.
@@ -25,16 +23,17 @@ library(maptools)
 ```
 
 ```{r load_all, echo = FALSE, eval = TRUE}
-#eu estou usando uma cópia local para desenvolvimento
 devtools::load_all("../../1_modleR/")
-#devtools::load_all("../1_modleR/")
 ```
 
 # Selecting one species as an example
 
-We use a standard dataset inside the package `modleR`. First, from `example_occs` object we select only data from one species *Abarema langsdorffii* and create one training set (70% of the data) and one test set (30% of the data) for the data.
+We use the standard dataset inside the package `modleR`. First, from 
+`example_occs` object we select only data from one species *Abarema langsdorffii* 
+and create one training set (70% of the data) and one test set (30% of the data)
+for the data.
 
-```{r dataset}
+```{r dataset1}
 ## Creating an object with species names
 especies <- names(example_occs)[1]
 # Selecting only coordinates for the first species
@@ -48,7 +47,7 @@ set <- sample(1:nrow(coord1sp), size = ceiling(0.7 * nrow(coord1sp)))
 # Creating training data set (70% of species' records)
 train_set <- coord1sp[set,]
 # Creating test data set (other 30%)
-test_set <- coord1sp[setdiff(1:nrow(coord1sp),set),]
+test_set <- coord1sp[setdiff(1:nrow(coord1sp), set), ]
 ```
 
 Now lets the check our data points. We plot the traning and test data sets with the first axis of the environmental PCA data from the object `example_vars`.
@@ -60,15 +59,56 @@ predictor <- example_vars[[1]]
 pts <- SpatialPoints(coord1sp[,c(2,3)])
 # ploting environmental layer
 plot(predictor, legend = FALSE)
-points(lat ~ lon, data=coord1sp)
+points(lat ~ lon, data = coord1sp, pch = 19)
 ```
 
 
 # Fitting and projection datasets
 
-We want to fit everything in a small area around the occurrence points (generated through a "median distance buffer") and project it to other sample rasterStacks 
+We want to fit everything in a small area around the occurrence points and project it to other sample rasterStack objects. 
 
-```{r, fig.height = 6}
+The structure of folder for projections in modleR is key for this step. 
+In this example we have a folder with environmental data `"./env"`. The period 
+means "the current working directory" so this is a subfolder, in this case it is 
+besides the folder where the model outputs are created `("./models_dir")` by 
+default.
+
+```bash
+current_wd
+├── models_dir etc...
+└── env
+    ├── cropped_proj.tif
+    └── proj/
+        ├── proj1/
+        │     ├ var01.tif
+        │     ├ var02.tif
+        │     ├ var03.tif
+        │     └ var04.tif
+        ├── proj2/
+        │     ├ var01.tif
+        │     ├ var02.tif
+        │     ├ var03.tif
+        │     └ var04.tif
+        ├── proj3/
+        │     ├ var01.tif
+        │     ├ var02.tif
+        │     ├ var03.tif
+        │     └ var04.tif
+        └── proj4/
+              ├ var01.tif
+              ├ var02.tif
+              ├ var03.tif
+              └ var04.tif
+```    
+
+Note that in this subfolder every projection has its own subfolder, and that all variables have the same names. You can put all the variables (from bio01 to  bio19 in Worldclim, for example) and if there's a variable selection within `do_any()`
+the function will use only the selected variables too. 
+
+For performing projections in modleR you only need to pass the address of the folder where the projection variables are `proj_data_folder = "./env/proj"` and set `project_model = TRUE`.
+
+We show here the example dataset and one of the projections (`proj1`)
+
+```{r dataset2, fig.height = 6}
 fit_data <- stack("../data/env/cropped_proj.tif")
 proj_folder <- "../data/env/proj/proj1/"
 proj_data <- list.files(proj_folder, full.names = TRUE) %>%
@@ -79,50 +119,45 @@ pts <- SpatialPoints(coord1sp[,c(2,3)])
 plot(!is.na(example_vars[[1]]), legend = FALSE, add = FALSE)
 plot(fit_data[[1]], legend = FALSE, add = TRUE)
 plot(proj_data[[1]], legend = FALSE, add = TRUE)
-points(train_set[,2:3], col = "red", pch = 19)
-points(test_set[,2:3], col = "blue", pch = 19)
-
 ```
 
+Models will be fit in the area of the Brazilian Atlantic Forest and projected to the Northern Andes in Colombia.
 
 ## Model projection
 
-A simple model with no buffer and no projection: 
+### A simple model with no buffer and no projection: 
 
 ```{r enm1, message = FALSE, eval = TRUE}
 # generating sdmdata
 sdm_no_proj <- setup_sdmdata(species_name = especies[1], 
                              occurrences = coord1sp[,-1],
                              predictors=fit_data, 
-                             models_dir="projection/fit", 
+                             models_dir="./projections/", 
                              clean_dupl = TRUE, 
                              clean_na = TRUE)
 # running models
-no_proj <- do_many(species_name = especies[1],
-                 predictors = fit_data,
-                 models_dir = "projection/fit",
-                 bioclim = TRUE,
-                 svmk = TRUE)
+no_proj <- do_any(species_name = especies[1],
+                   predictors = fit_data,
+                   models_dir = "./projections/",
+                   algorithm = "svme")
 
-no_proj.bc <- raster("projection/fit/Abarema_langsdorffii/present/partitions/bioclim_cont_Abarema_langsdorffii_1_1.tif")
-no_proj.svmk <- raster("projection/fit/Abarema_langsdorffii/present/partitions/svmk_cont_Abarema_langsdorffii_1_1.tif")
+no_proj.bc <- raster("./projections/Abarema_langsdorffii/present/partitions/svme_cont_Abarema_langsdorffii_1_1.tif")
 plot(no_proj.bc)
-maps::map(, , add = TRUE)
-plot(no_proj.svmk)
 maps::map(, , add = TRUE)
 ```
 
+### Projections
 
-We project to a series of projections in the specified folder: `"./env/proj"`
+We make a series of projections in the specified folder: `"./env/proj"`. We use function `do_any()` and algorithm svme in this example:
 
-```{r proj, message = FALSE, eval = TRUE}
-## first renaming layer names from predictors to match proj files 
+```{r proj, message = FALSE, eval = TRUE, warning= FALSE}
 names(fit_data) <- paste0("proj1_", 1:6)
+# this is just to make sure that all current layers have the same names of the projectio variables.
 
 sdm_yes_proj <- setup_sdmdata(species_name = especies[1],
                               occurrences = coord1sp[, -1],
                               predictors = fit_data,
-                              models_dir = "projection/projtest",
+                              models_dir = "./projections/",
                               clean_dupl = TRUE,
                               clean_na = TRUE,
                               buffer_type = "median",
@@ -130,76 +165,75 @@ sdm_yes_proj <- setup_sdmdata(species_name = especies[1],
                               boot_n = 3)
 
 yes_proj1 <- modleR::do_any(species_name = especies[1],
-                 predictors = fit_data,
-                 models_dir = "projection/projtest",
-                 algo = "bioclim",
-                 project_model = TRUE,
-                 proj_data_folder = "data/env/proj/",
-                 png_partitions = TRUE)
-
-yes_proj <- do_many(species_name = especies[1],
-                    predictors = fit_data,
-                    models_dir = "projection/projtest",
-                    bioclim = TRUE,
-                    domain = TRUE,
-                    glm = TRUE,
-                    mahal = FALSE,
-                    maxent = TRUE,
-                    rf = TRUE,
-                    svmk = TRUE,
-                    svme = TRUE,
-                    brt = TRUE,
-                    project_model = TRUE,
-                    proj_data_folder = "../data/env/proj/",
-                    png_partitions = TRUE)
+                            predictors = fit_data,
+                            models_dir = "./projections/",
+                            algo = "svme",
+                            project_model = TRUE,
+                            proj_data_folder = "data/env/proj/",
+                            png_partitions = TRUE)
 ```
 
-```{r list_results}
-results <- list.files("projection/projtest", pattern = ".tif$", recursive = TRUE, full.names = TRUE)
-length(results)#oito algoritmos, 5 projeções (present e as demais, nem vou plotar)
+The same parameters would work when calling `do_many()` (not run here)
+
+We can plot the resulting projections. Note that this is one projection per partition (n = 3).
+
+
+```{r}
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj1/partitions/svme_cont_Abarema_langsdorffii_1_1.png")
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj1/partitions/svme_cont_Abarema_langsdorffii_2_1.png")
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj1/partitions/svme_cont_Abarema_langsdorffii_3_1.png")
 ```
 
 # Final model projection
 
 
-The `final_model()` function has a parameter `proj_dir` that allows it to be run using any projection. We can project the models fit to the present.
+`final_model()` has a parameter `proj_dir` that allows it to be run using any projection. Unlike `do_any()` and `do_many()` this function needs to be run for each projection. The default projection is `"present"`.
 
-```{r remedy001, eval = TRUE}
-args(final_model)
-
+```{r remedy001, eval = TRUE, message= F}
 final_model_present <- final_model(species_name = especies[1],
-                                   models_dir = "projection/projtest",
-                                   select_par = "TSSmax",
-                                   select_par_val = 0,
+                                   models_dir = "./projections/",
                                    proj_dir = "present", 
                                    overwrite = TRUE)
 ```
 
-or the projected models, 
+For the projected models, each `proj_dir` has to have the name of the projection
 
-```{r remedy002, eval = TRUE}
+### Proj1
+
+```{r proj1, eval = TRUE, message= F}
 final_model_proj1 <- final_model(species_name = especies[1],
-                                 models_dir = "projection/projtest",
-                                 select_par = "TSSmax",
-                                 select_par_val = 0,
-                                 proj_dir = "proj1", overwrite = TRUE)
-
-final_model_proj2 <- final_model(species_name = especies[1],
-            models_dir = "projection/projtest",
-            select_par = "TSSmax",
-            select_par_val = 0,
-            proj_dir = "proj2", overwrite = TRUE)
-
-final_model_proj3 <- final_model(species_name = especies[1],
-            models_dir = "projection/projtest",
-            select_par = "TSSmax",
-            select_par_val = 0,
-            proj_dir = "proj3", overwrite = TRUE)
-
-final_model_proj4 <- final_model(species_name = especies[1],
-            models_dir = "projection/projtest",
-            select_par = "TSSmax",
-            select_par_val = 0,
-            proj_dir = "proj4", overwrite = TRUE)
+                                 models_dir = "./projections/",
+                                 proj_dir = "proj1",
+                                 overwrite = TRUE)
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj1/final_models/Abarema_langsdorffii_svme_raw_mean.png")
 ```
 
+### Proj2
+
+```{r proj2, eval = TRUE, message= F}
+final_model_proj2 <- final_model(species_name = especies[1],
+                                 models_dir = "./projections/",
+                                 proj_dir = "proj2",
+                                 overwrite = TRUE)
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj2/final_models/Abarema_langsdorffii_svme_raw_mean.png")
+```
+
+### Proj3
+
+```{r proj3, eval = TRUE, message= F}
+final_model_proj3 <- final_model(species_name = especies[1],
+                                 models_dir = "./projections/",
+                                 proj_dir = "proj3",
+                                 overwrite = TRUE)
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj3/final_models/Abarema_langsdorffii_svme_raw_mean.png")
+```
+
+### Proj4
+
+```{r proj4, eval = TRUE, message= F}
+final_model_proj4 <- final_model(species_name = especies[1],
+                                 models_dir = "./projections/",
+                                 proj_dir = "proj4",
+                                 overwrite = TRUE)
+knitr::include_graphics("./projections/Abarema_langsdorffii/proj4/final_models/Abarema_langsdorffii_svme_raw_mean.png")
+```
